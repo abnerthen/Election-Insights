@@ -6,6 +6,7 @@ import {
   candidateVotesTable,
   partiesTable,
   constituencyResultsTable,
+  electionsTable,
 } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
 
@@ -108,12 +109,19 @@ router.get("/constituencies/:id", async (req, res) => {
       .where(eq(constituenciesTable.id, id));
     if (!constituency) return res.status(404).json({ error: "Not found" });
 
-    // Get latest result for this constituency
+    // Get latest result for this constituency (most recent by election date)
     const [result] = await db
-      .select()
+      .select({
+        electionId: constituencyResultsTable.electionId,
+        constituencyId: constituencyResultsTable.constituencyId,
+        registeredVoters: constituencyResultsTable.registeredVoters,
+        votesCast: constituencyResultsTable.votesCast,
+        status: constituencyResultsTable.status,
+      })
       .from(constituencyResultsTable)
+      .innerJoin(electionsTable, eq(electionsTable.id, constituencyResultsTable.electionId))
       .where(eq(constituencyResultsTable.constituencyId, id))
-      .orderBy(sql`election_id desc`)
+      .orderBy(sql`${electionsTable.date} desc`)
       .limit(1);
 
     if (!result) return res.status(404).json({ error: "No results found" });

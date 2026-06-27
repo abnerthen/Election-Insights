@@ -12,7 +12,7 @@ import NotFound from "@/pages/not-found";
 const queryClient = new QueryClient();
 
 function AppRoutes() {
-  const [currentElectionId, setCurrentElectionId] = useState<number | null>(1); // Default to first election
+  const [currentElectionId, setCurrentElectionId] = useState<number | null>(null);
   
   return (
     <Layout currentElectionId={currentElectionId} onElectionChange={setCurrentElectionId}>

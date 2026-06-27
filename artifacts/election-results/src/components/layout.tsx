@@ -1,62 +1,77 @@
-import { useState, useEffect } from "react";
-import { Link, useLocation } from "wouter";
+import { useEffect } from "react";
+import { Link } from "wouter";
 import { useListElections, getListElectionsQueryKey } from "@workspace/api-client-react";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/ui/select";
-import { BarChart3, Map, Tv } from "lucide-react";
 
-export function Layout({ children, currentElectionId, onElectionChange }: { children: React.ReactNode, currentElectionId: number | null, onElectionChange: (id: number) => void }) {
+export function Layout({ children, currentElectionId, onElectionChange }: {
+  children: React.ReactNode;
+  currentElectionId: number | null;
+  onElectionChange: (id: number) => void;
+}) {
   const { data: elections, isLoading } = useListElections({ query: { queryKey: getListElectionsQueryKey() } });
-  
+
+  // Auto-select the most recent election on first load
+  useEffect(() => {
+    if (!currentElectionId && elections && elections.length > 0) {
+      // Elections are ordered by date asc from API; pick the last one (most recent)
+      const sorted = [...elections].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      onElectionChange(sorted[0].id);
+    }
+  }, [elections, currentElectionId, onElectionChange]);
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
       <header className="sticky top-0 z-50 w-full border-b border-border bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="bg-primary text-primary-foreground p-2 rounded-sm">
-              <Tv className="w-5 h-5" />
+          <div className="flex items-center gap-3">
+            <div className="bg-primary text-primary-foreground px-2 py-1 rounded-sm text-xs font-black tracking-widest uppercase">
+              DUN
             </div>
-            <Link href="/" className="font-serif text-2xl font-bold tracking-widest text-primary flex items-center uppercase">
-              Election <span className="text-muted-foreground ml-1">Night</span>
+            <Link href="/" className="font-serif text-xl font-bold tracking-widest text-primary flex items-center uppercase">
+              Johor <span className="text-muted-foreground ml-2 font-normal">Election Results</span>
             </Link>
           </div>
 
           <div className="flex items-center gap-4">
             {isLoading ? (
-              <div className="w-48 h-10 bg-muted animate-pulse rounded-md" />
+              <div className="w-56 h-10 bg-muted animate-pulse rounded-md" />
             ) : (
-              <Select 
-                value={currentElectionId ? currentElectionId.toString() : ""} 
+              <Select
+                value={currentElectionId ? currentElectionId.toString() : ""}
                 onValueChange={(val) => onElectionChange(parseInt(val))}
               >
                 <SelectTrigger className="w-[280px] bg-secondary border-none h-10 text-base font-semibold">
                   <SelectValue placeholder="Select Election" />
                 </SelectTrigger>
                 <SelectContent>
-                  {elections?.map((election) => (
-                    <SelectItem key={election.id} value={election.id.toString()}>
-                      {election.name} ({new Date(election.date).getFullYear()})
-                    </SelectItem>
-                  ))}
+                  {elections
+                    ?.slice()
+                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                    .map((election) => (
+                      <SelectItem key={election.id} value={election.id.toString()}>
+                        {election.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             )}
           </div>
         </div>
       </header>
-      
+
       <main className="flex-1">
         {children}
       </main>
-      
+
       <footer className="border-t border-border bg-card py-6 mt-12">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground uppercase tracking-widest font-serif">
-          Decision Desk HQ • Live Data Feed
+          Johor Dewan Undangan Negeri — Historical Election Results
         </div>
       </footer>
     </div>
