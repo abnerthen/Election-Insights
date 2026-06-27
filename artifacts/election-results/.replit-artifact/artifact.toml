@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Election Results"
+version = "1.0.0"
+id = "artifacts/election-results"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23903
+
+[services.development]
+run = "pnpm --filter @workspace/election-results run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/election-results", "run", "build" ]
+publicDir = "artifacts/election-results/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23903"
+BASE_PATH = "/"

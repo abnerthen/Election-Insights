@@ -1,15 +1,22 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Election Results API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: elections
+    description: Election operations
+  - name: parties
+    description: Party operations
+  - name: constituencies
+    description: Constituency operations
+  - name: results
+    description: Result operations
 paths:
   /healthz:
     get:
@@ -24,6 +31,161 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /elections:
+    get:
+      operationId: listElections
+      tags: [elections]
+      summary: List all elections
+      responses:
+        "200":
+          description: List of elections
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Election"
+
+  /elections/{id}:
+    get:
+      operationId: getElection
+      tags: [elections]
+      summary: Get an election by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Election detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Election"
+        "404":
+          description: Not found
+
+  /elections/{id}/summary:
+    get:
+      operationId: getElectionSummary
+      tags: [elections]
+      summary: Get high-level summary for an election (seat totals, turnout, registered voters)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Election summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ElectionSummary"
+
+  /elections/{id}/seat-breakdown:
+    get:
+      operationId: getElectionSeatBreakdown
+      tags: [elections]
+      summary: Get seats won per party for the assembly diagram
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Seat breakdown per party
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PartySeatCount"
+
+  /elections/{id}/vote-share:
+    get:
+      operationId: getElectionVoteShare
+      tags: [elections]
+      summary: Get total votes and vote share per party
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Vote share per party
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PartyVoteShare"
+
+  /parties:
+    get:
+      operationId: listParties
+      tags: [parties]
+      summary: List all parties
+      responses:
+        "200":
+          description: List of parties
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Party"
+
+  /constituencies:
+    get:
+      operationId: listConstituencies
+      tags: [constituencies]
+      summary: List all constituencies with their results for an election
+      parameters:
+        - name: electionId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of constituencies with results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConstituencyResult"
+
+  /constituencies/{id}:
+    get:
+      operationId: getConstituency
+      tags: [constituencies]
+      summary: Get full result detail for a constituency
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Constituency with detailed candidate results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConstituencyDetail"
+        "404":
+          description: Not found
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +196,180 @@ components:
       required:
         - status
 
+    Election:
+      type: object
+      required: [id, name, date, totalSeats, status]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        date:
+          type: string
+        totalSeats:
+          type: integer
+        status:
+          type: string
+          description: "declared | counting | pending"
+
+    ElectionSummary:
+      type: object
+      required: [electionId, electionName, totalRegisteredVoters, totalVotesCast, turnoutPercent, seatsTotal, seatsDeclared, leadingParty]
+      properties:
+        electionId:
+          type: integer
+        electionName:
+          type: string
+        totalRegisteredVoters:
+          type: integer
+        totalVotesCast:
+          type: integer
+        turnoutPercent:
+          type: number
+        seatsTotal:
+          type: integer
+        seatsDeclared:
+          type: integer
+        leadingParty:
+          type: ["string", "null"]
+        leadingPartyColor:
+          type: ["string", "null"]
+        leadingPartySeats:
+          type: ["integer", "null"]
+        majorityThreshold:
+          type: integer
+
+    PartySeatCount:
+      type: object
+      required: [partyId, partyName, partyColor, partyAbbreviation, seatsWon]
+      properties:
+        partyId:
+          type: integer
+        partyName:
+          type: string
+        partyAbbreviation:
+          type: string
+        partyColor:
+          type: string
+        seatsWon:
+          type: integer
+
+    PartyVoteShare:
+      type: object
+      required: [partyId, partyName, partyColor, partyAbbreviation, totalVotes, voteSharePercent]
+      properties:
+        partyId:
+          type: integer
+        partyName:
+          type: string
+        partyAbbreviation:
+          type: string
+        partyColor:
+          type: string
+        totalVotes:
+          type: integer
+        voteSharePercent:
+          type: number
+
+    Party:
+      type: object
+      required: [id, name, abbreviation, color]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        abbreviation:
+          type: string
+        color:
+          type: string
+        description:
+          type: ["string", "null"]
+
+    ConstituencyResult:
+      type: object
+      required: [id, name, region, registeredVoters, votesCast, turnoutPercent, status]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        region:
+          type: string
+        registeredVoters:
+          type: integer
+        votesCast:
+          type: integer
+        turnoutPercent:
+          type: number
+        status:
+          type: string
+          description: "declared | counting | pending"
+        winningPartyId:
+          type: ["integer", "null"]
+        winningPartyName:
+          type: ["string", "null"]
+        winningPartyColor:
+          type: ["string", "null"]
+        winningPartyAbbreviation:
+          type: ["string", "null"]
+        winningCandidateName:
+          type: ["string", "null"]
+        winningVotes:
+          type: ["integer", "null"]
+        margin:
+          type: ["integer", "null"]
+        latitude:
+          type: ["number", "null"]
+        longitude:
+          type: ["number", "null"]
+
+    ConstituencyDetail:
+      type: object
+      required: [id, name, region, registeredVoters, votesCast, turnoutPercent, status, candidates]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        region:
+          type: string
+        registeredVoters:
+          type: integer
+        votesCast:
+          type: integer
+        turnoutPercent:
+          type: number
+        status:
+          type: string
+        latitude:
+          type: ["number", "null"]
+        longitude:
+          type: ["number", "null"]
+        candidates:
+          type: array
+          items:
+            $ref: "#/components/schemas/CandidateResult"
+
+    CandidateResult:
+      type: object
+      required: [id, name, partyId, partyName, partyColor, partyAbbreviation, votes, voteSharePercent, isWinner]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        partyId:
+          type: integer
+        partyName:
+          type: string
+        partyAbbreviation:
+          type: string
+        partyColor:
+          type: string
+        votes:
+          type: integer
+        voteSharePercent:
+          type: number
+        isWinner:
+          type: boolean

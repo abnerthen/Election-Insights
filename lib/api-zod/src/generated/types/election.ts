@@ -6,6 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
+export interface Election {
+  id: number;
+  name: string;
+  date: string;
+  totalSeats: number;
+  /** declared | counting | pending */
   status: string;
 }
