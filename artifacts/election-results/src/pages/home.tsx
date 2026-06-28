@@ -122,10 +122,10 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
         <TabsContent value="seats" className="mt-0">
           <div className="bg-card border border-border rounded-xl p-8 shadow-2xl relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/20 pointer-events-none" />
-            <h2 className="text-center font-serif text-2xl mb-2 uppercase tracking-widest text-muted-foreground">
+            <h2 className="text-center font-serif text-2xl mb-1 uppercase tracking-widest text-muted-foreground">
               Johor State Assembly
             </h2>
-            <p className="text-center text-xs text-muted-foreground mb-8 tracking-widest uppercase">
+            <p className="text-center text-xs text-muted-foreground mb-6 tracking-widest uppercase">
               Dewan Undangan Negeri Johor — {summary?.seatsTotal} seats
             </p>
             {seatBreakdown && summary && (
@@ -137,8 +137,8 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
             )}
             {/* Seat legend */}
             {seatBreakdown && (
-              <div className="mt-6 flex flex-wrap gap-4 justify-center">
-                {seatBreakdown.filter(p => p.seatsWon > 0).map(p => (
+              <div className="mt-4 flex flex-wrap gap-4 justify-center">
+                {seatBreakdown.filter(p => p.seatsWon > 0).sort((a,b) => b.seatsWon - a.seatsWon).map(p => (
                   <div key={p.partyId} className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: p.partyColor }} />
                     <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
@@ -146,6 +146,47 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
                     </span>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Vote share chart */}
+            {voteShare && (
+              <div className="mt-10 border-t border-border pt-8">
+                <h3 className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-5 text-center">
+                  Vote Share
+                </h3>
+                <div className="max-w-2xl mx-auto flex flex-col gap-3">
+                  {voteShare
+                    .filter(p => p.totalVotes > 0)
+                    .sort((a, b) => b.voteSharePercent - a.voteSharePercent)
+                    .map(party => (
+                      <div key={party.partyId} className="flex items-center gap-3">
+                        <div
+                          className="w-2 h-2 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: party.partyColor }}
+                        />
+                        <div className="w-16 text-xs font-bold uppercase tracking-wider text-muted-foreground flex-shrink-0">
+                          {party.partyAbbreviation}
+                        </div>
+                        <div className="flex-1 bg-secondary/60 h-5 rounded-sm overflow-hidden relative">
+                          <div
+                            className="h-full rounded-sm"
+                            style={{
+                              width: `${party.voteSharePercent}%`,
+                              backgroundColor: party.partyColor,
+                              opacity: 0.85,
+                            }}
+                          />
+                          <span className="absolute inset-0 flex items-center px-2 text-xs font-semibold text-white drop-shadow">
+                            {party.voteSharePercent.toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="w-24 text-right text-xs text-muted-foreground flex-shrink-0">
+                          {party.totalVotes.toLocaleString()}
+                        </div>
+                      </div>
+                    ))}
+                </div>
               </div>
             )}
           </div>
