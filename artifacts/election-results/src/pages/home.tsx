@@ -8,6 +8,7 @@ import { useGetElectionSummary, getGetElectionSummaryQueryKey,
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SeatDiagram } from "@/components/seat-diagram";
 import { GaugeCard } from "@/components/gauge-card";
+import { PieChartCard } from "@/components/pie-chart-card";
 import { ConstituencyMap } from "@/components/constituency-map";
 import { JohorMap } from "@/components/johor-map";
 
@@ -44,59 +45,97 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
-      {/* Hero Stats */}
+      {/* Hero Stats — 4 cards */}
       {summary && (
         <div className="mb-12 grid grid-cols-2 md:grid-cols-4 gap-4">
-          {/* Seats declared — gauge out of totalSeats */}
-          <GaugeCard
-            label="Seats Declared"
-            value={summary.seatsDeclared}
-            max={summary.seatsTotal}
-            unit=""
-            formatValue={(v) => `${v}/${summary.seatsTotal}`}
-            color="#3b82f6"
-            subtitle={election ? `Status: ${election.status.toUpperCase()}` : undefined}
-          />
 
-          {/* Turnout — gauge 0–100% */}
+          {/* Card 1: Seats Declared + Majority Threshold combined */}
+          <div className="bg-card border border-border p-4 rounded-lg flex flex-col gap-3">
+            <span className="text-muted-foreground text-xs uppercase tracking-widest font-bold">
+              Seats Declared
+            </span>
+            <div className="flex items-end gap-2">
+              <span className="text-4xl font-serif font-bold text-foreground">
+                {summary.seatsDeclared}
+              </span>
+              <span className="text-lg text-muted-foreground mb-1">/ {summary.seatsTotal}</span>
+            </div>
+            {/* Stacked seat bar */}
+            <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary rounded-full transition-all duration-700"
+                style={{ width: `${(summary.seatsDeclared / summary.seatsTotal) * 100}%` }}
+              />
+            </div>
+            <div className="border-t border-border pt-2 mt-1">
+              <span className="text-muted-foreground text-xs uppercase tracking-widest font-bold">
+                Majority
+              </span>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-2xl font-serif font-bold text-amber-400">
+                  {summary.majorityThreshold}
+                </span>
+                <span className="text-xs text-muted-foreground">seats needed</span>
+              </div>
+              {/* Majority bar showing threshold position */}
+              <div className="relative w-full h-1.5 bg-secondary rounded-full mt-2">
+                <div
+                  className="absolute left-0 top-0 h-full bg-amber-400/60 rounded-full"
+                  style={{ width: `${(summary.majorityThreshold / summary.seatsTotal) * 100}%` }}
+                />
+                <div
+                  className="absolute top-1/2 -translate-y-1/2 w-0.5 h-3 bg-amber-400 rounded"
+                  style={{ left: `${(summary.majorityThreshold / summary.seatsTotal) * 100}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2: Turnout — speedometer gauge */}
           <GaugeCard
             label="Turnout"
             value={summary.turnoutPercent}
             max={100}
             unit="%"
             color="#10b981"
-            subtitle={`${summary.totalVotesCast.toLocaleString()} / ${summary.totalRegisteredVoters.toLocaleString()} voters`}
+            subtitle={`${summary.totalVotesCast.toLocaleString()} of ${summary.totalRegisteredVoters.toLocaleString()} voters`}
           />
 
-          {/* Majority threshold — gauge seats vs threshold */}
-          <GaugeCard
-            label="Majority Threshold"
-            value={summary.majorityThreshold}
-            max={summary.seatsTotal}
-            unit=""
-            formatValue={() => `${summary.majorityThreshold}`}
-            color="#f59e0b"
-            subtitle={`of ${summary.seatsTotal} seats`}
-          />
+          {/* Card 3: Vote share pie chart */}
+          {voteShare && (
+            <PieChartCard
+              title="Vote Share"
+              slices={voteShare
+                .filter(p => p.totalVotes > 0)
+                .sort((a, b) => b.totalVotes - a.totalVotes)
+                .map(p => ({ label: p.partyAbbreviation, value: p.totalVotes, color: p.partyColor }))}
+            />
+          )}
 
-          {/* Projected winner — special card */}
+          {/* Card 4: Projected winner */}
           <div className="bg-card border border-border p-4 rounded-lg flex flex-col relative overflow-hidden">
             <div className="relative z-10">
-              <span className="text-muted-foreground text-xs uppercase tracking-widest font-bold mb-1 block">Projected Winner</span>
+              <span className="text-muted-foreground text-xs uppercase tracking-widest font-bold mb-1 block">
+                Projected Winner
+              </span>
               {summary.leadingParty ? (
                 <div className="flex flex-col mt-3">
-                  <div className="text-2xl font-serif font-bold" style={{ color: summary.leadingPartyColor || "white" }}>
+                  <div className="text-2xl font-serif font-bold leading-tight" style={{ color: summary.leadingPartyColor || "white" }}>
                     {summary.leadingParty}
                   </div>
-                  <div className="text-sm text-muted-foreground mt-2">{summary.leadingPartySeats} seats won</div>
+                  <div className="text-sm text-muted-foreground mt-2">
+                    {summary.leadingPartySeats} seats won
+                  </div>
                   {summary.leadingPartySeats != null && (
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                      {summary.leadingPartySeats >= summary.majorityThreshold ? "✓ Majority" : `Need ${summary.majorityThreshold - summary.leadingPartySeats} more`}
+                    <div className="text-xs mt-1 font-semibold" style={{ color: summary.leadingPartyColor || "white" }}>
+                      {summary.leadingPartySeats >= summary.majorityThreshold
+                        ? "✓ Majority secured"
+                        : `Need ${summary.majorityThreshold - summary.leadingPartySeats} more`}
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="text-2xl font-serif font-bold text-muted-foreground mt-1">Too close to call</div>
+                <div className="text-xl font-serif font-bold text-muted-foreground mt-2">Too close to call</div>
               )}
             </div>
             {summary.leadingPartyColor && (
