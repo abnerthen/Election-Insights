@@ -6,8 +6,8 @@ import { useGetElectionSummary, getGetElectionSummaryQueryKey,
   useListParties, getListPartiesQueryKey
 } from "@workspace/api-client-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
 import { SeatDiagram } from "@/components/seat-diagram";
+import { GaugeCard } from "@/components/gauge-card";
 import { ConstituencyMap } from "@/components/constituency-map";
 import { JohorMap } from "@/components/johor-map";
 
@@ -47,47 +47,53 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
       {/* Hero Stats */}
       {summary && (
         <div className="mb-12 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-card border border-border p-4 rounded-lg flex flex-col">
-            <span className="text-muted-foreground text-xs uppercase tracking-widest font-bold mb-1">Seats Declared</span>
-            <div className="text-4xl font-serif font-bold text-foreground">
-              {summary.seatsDeclared} <span className="text-xl text-muted-foreground">/ {summary.seatsTotal}</span>
-            </div>
-            <Progress value={(summary.seatsDeclared / summary.seatsTotal) * 100} className="h-1 mt-3" />
-            {election && (
-              <div className="text-xs mt-2 uppercase text-muted-foreground">
-                Status: <span className="text-primary font-bold">{election.status}</span>
-              </div>
-            )}
-          </div>
+          {/* Seats declared — gauge out of totalSeats */}
+          <GaugeCard
+            label="Seats Declared"
+            value={summary.seatsDeclared}
+            max={summary.seatsTotal}
+            unit=""
+            formatValue={(v) => `${v}/${summary.seatsTotal}`}
+            color="#3b82f6"
+            subtitle={election ? `Status: ${election.status.toUpperCase()}` : undefined}
+          />
 
-          <div className="bg-card border border-border p-4 rounded-lg flex flex-col">
-            <span className="text-muted-foreground text-xs uppercase tracking-widest font-bold mb-1">Turnout</span>
-            <div className="text-4xl font-serif font-bold text-foreground">
-              {summary.turnoutPercent.toFixed(1)}%
-            </div>
-            <div className="text-xs text-muted-foreground mt-2">
-              {summary.totalVotesCast.toLocaleString()} votes
-            </div>
-            <div className="text-xs text-muted-foreground mt-1">
-              of {summary.totalRegisteredVoters.toLocaleString()} registered
-            </div>
-          </div>
+          {/* Turnout — gauge 0–100% */}
+          <GaugeCard
+            label="Turnout"
+            value={summary.turnoutPercent}
+            max={100}
+            unit="%"
+            color="#10b981"
+            subtitle={`${summary.totalVotesCast.toLocaleString()} / ${summary.totalRegisteredVoters.toLocaleString()} voters`}
+          />
 
-          <div className="bg-card border border-border p-4 rounded-lg flex flex-col">
-            <span className="text-muted-foreground text-xs uppercase tracking-widest font-bold mb-1">Majority Threshold</span>
-            <div className="text-4xl font-serif font-bold text-foreground">{summary.majorityThreshold}</div>
-            <div className="text-xs text-muted-foreground mt-2">of {summary.seatsTotal} seats</div>
-          </div>
+          {/* Majority threshold — gauge seats vs threshold */}
+          <GaugeCard
+            label="Majority Threshold"
+            value={summary.majorityThreshold}
+            max={summary.seatsTotal}
+            unit=""
+            formatValue={() => `${summary.majorityThreshold}`}
+            color="#f59e0b"
+            subtitle={`of ${summary.seatsTotal} seats`}
+          />
 
+          {/* Projected winner — special card */}
           <div className="bg-card border border-border p-4 rounded-lg flex flex-col relative overflow-hidden">
             <div className="relative z-10">
-              <span className="text-muted-foreground text-xs uppercase tracking-widest font-bold mb-1">Projected Winner</span>
+              <span className="text-muted-foreground text-xs uppercase tracking-widest font-bold mb-1 block">Projected Winner</span>
               {summary.leadingParty ? (
-                <div className="flex flex-col mt-1">
+                <div className="flex flex-col mt-3">
                   <div className="text-2xl font-serif font-bold" style={{ color: summary.leadingPartyColor || "white" }}>
                     {summary.leadingParty}
                   </div>
-                  <div className="text-sm text-muted-foreground mt-1">{summary.leadingPartySeats} seats won</div>
+                  <div className="text-sm text-muted-foreground mt-2">{summary.leadingPartySeats} seats won</div>
+                  {summary.leadingPartySeats != null && (
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {summary.leadingPartySeats >= summary.majorityThreshold ? "✓ Majority" : `Need ${summary.majorityThreshold - summary.leadingPartySeats} more`}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-2xl font-serif font-bold text-muted-foreground mt-1">Too close to call</div>
