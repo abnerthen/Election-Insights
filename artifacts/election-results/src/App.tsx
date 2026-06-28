@@ -7,23 +7,32 @@ import { useState } from "react";
 import { Layout } from "@/components/layout";
 import { HomePage } from "@/pages/home";
 import { ConstituencyPage } from "@/pages/constituency";
+import { AdminPage } from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
 
 function AppRoutes() {
   const [currentElectionId, setCurrentElectionId] = useState<number | null>(null);
-  
+
   return (
-    <Layout currentElectionId={currentElectionId} onElectionChange={setCurrentElectionId}>
-      <Switch>
-        <Route path="/">
-          <HomePage currentElectionId={currentElectionId} />
-        </Route>
-        <Route path="/constituency/:id" component={ConstituencyPage} />
-        <Route component={NotFound} />
-      </Switch>
-    </Layout>
+    <Switch>
+      {/* Admin route — no nav shell */}
+      <Route path="/admin" component={AdminPage} />
+
+      {/* Public routes — wrapped in Layout */}
+      <Route>
+        <Layout currentElectionId={currentElectionId} onElectionChange={setCurrentElectionId}>
+          <Switch>
+            <Route path="/">
+              <HomePage currentElectionId={currentElectionId} />
+            </Route>
+            <Route path="/constituency/:id" component={ConstituencyPage} />
+            <Route component={NotFound} />
+          </Switch>
+        </Layout>
+      </Route>
+    </Switch>
   );
 }
 
