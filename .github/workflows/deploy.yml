@@ -49,7 +49,7 @@ jobs:
 
       - name: Build Frontend Application
         run: |
-          BASE_PATH="/dashboard-pilihan-raya/" pnpm --filter @workspace/election-results run build
+          BASE_PATH="/Election-Insights/" pnpm --filter @workspace/election-results run build
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
