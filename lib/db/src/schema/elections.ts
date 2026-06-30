@@ -11,6 +11,8 @@ export const electionsTable = pgTable("elections", {
   date: text("date").notNull(),
   totalSeats: integer("total_seats").notNull(),
   status: electionStatusEnum("status").notNull().default("pending"),
+  scope: text("scope").notNull().default("federal"),
+  state: text("state"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -26,8 +28,13 @@ export const constituenciesTable = pgTable("constituencies", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   region: text("region").notNull(),
+  code: text("code"),
   latitude: real("latitude"),
   longitude: real("longitude"),
+  gridX: integer("grid_x"),
+  gridY: integer("grid_y"),
+  scope: text("scope").notNull().default("state"),
+  state: text("state").notNull(),
 });
 
 export const candidatesTable = pgTable("candidates", {
@@ -44,6 +51,7 @@ export const constituencyResultsTable = pgTable("constituency_results", {
   constituencyId: integer("constituency_id").notNull().references(() => constituenciesTable.id),
   registeredVoters: integer("registered_voters").notNull(),
   votesCast: integer("votes_cast").notNull().default(0),
+  spoiltVotes: integer("spoilt_votes").notNull().default(0),
   status: constituencyStatusEnum("status").notNull().default("pending"),
 });
 

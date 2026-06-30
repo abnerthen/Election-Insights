@@ -143,6 +143,23 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Party"
+    post:
+      summary: "Add a new political party"
+      operationId: "createParty"
+      tags: [parties]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePartyRequest"
+      responses:
+        "201":
+          description: "Party created successfully"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Party"
 
   /constituencies:
     get:
@@ -188,6 +205,19 @@ paths:
 
 components:
   schemas:
+    CreatePartyRequest:
+      type: object
+      required: [name, abbreviation, color]
+      properties:
+        name:
+          type: string
+        abbreviation:
+          type: string
+        color:
+          type: string
+        description:
+          type: string
+
     HealthStatus:
       type: object
       properties:
@@ -198,7 +228,7 @@ components:
 
     Election:
       type: object
-      required: [id, name, date, totalSeats, status]
+      required: [id, name, date, totalSeats, status, scope]
       properties:
         id:
           type: integer
@@ -211,6 +241,10 @@ components:
         status:
           type: string
           description: "declared | counting | pending"
+        scope:
+          type: string
+        state:
+          type: ["string", "null"]
 
     ElectionSummary:
       type: object
@@ -288,7 +322,7 @@ components:
 
     ConstituencyResult:
       type: object
-      required: [id, name, region, registeredVoters, votesCast, turnoutPercent, status]
+      required: [id, name, region, code, registeredVoters, votesCast, spoiltVotes, turnoutPercent, status, scope, state]
       properties:
         id:
           type: integer
@@ -296,15 +330,23 @@ components:
           type: string
         region:
           type: string
+        code:
+          type: string
         registeredVoters:
           type: integer
         votesCast:
+          type: integer
+        spoiltVotes:
           type: integer
         turnoutPercent:
           type: number
         status:
           type: string
           description: "declared | counting | pending"
+        scope:
+          type: string
+        state:
+          type: string
         winningPartyId:
           type: ["integer", "null"]
         winningPartyName:
@@ -323,10 +365,14 @@ components:
           type: ["number", "null"]
         longitude:
           type: ["number", "null"]
+        gridX:
+          type: ["integer", "null"]
+        gridY:
+          type: ["integer", "null"]
 
     ConstituencyDetail:
       type: object
-      required: [id, name, region, registeredVoters, votesCast, turnoutPercent, status, candidates]
+      required: [id, name, region, code, registeredVoters, votesCast, spoiltVotes, turnoutPercent, status, candidates, scope, state]
       properties:
         id:
           type: integer
@@ -334,18 +380,30 @@ components:
           type: string
         region:
           type: string
+        code:
+          type: string
         registeredVoters:
           type: integer
         votesCast:
+          type: integer
+        spoiltVotes:
           type: integer
         turnoutPercent:
           type: number
         status:
           type: string
+        scope:
+          type: string
+        state:
+          type: string
         latitude:
           type: ["number", "null"]
         longitude:
           type: ["number", "null"]
+        gridX:
+          type: ["integer", "null"]
+        gridY:
+          type: ["integer", "null"]
         candidates:
           type: array
           items:

@@ -25,7 +25,9 @@ export const ListElectionsResponseItem = zod.object({
   "name": zod.string(),
   "date": zod.string(),
   "totalSeats": zod.number(),
-  "status": zod.string().describe('declared | counting | pending')
+  "status": zod.string().describe('declared | counting | pending'),
+  "scope": zod.string(),
+  "state": zod.string().nullish()
 })
 export const ListElectionsResponse = zod.array(ListElectionsResponseItem)
 
@@ -42,7 +44,9 @@ export const GetElectionResponse = zod.object({
   "name": zod.string(),
   "date": zod.string(),
   "totalSeats": zod.number(),
-  "status": zod.string().describe('declared | counting | pending')
+  "status": zod.string().describe('declared | counting | pending'),
+  "scope": zod.string(),
+  "state": zod.string().nullish()
 })
 
 
@@ -117,6 +121,25 @@ export const ListPartiesResponse = zod.array(ListPartiesResponseItem)
 
 
 /**
+ * @summary Add a new political party
+ */
+export const CreatePartyBody = zod.object({
+  "name": zod.string(),
+  "abbreviation": zod.string(),
+  "color": zod.string(),
+  "description": zod.string().optional()
+})
+
+export const CreatePartyResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "abbreviation": zod.string(),
+  "color": zod.string(),
+  "description": zod.string().nullish()
+})
+
+
+/**
  * @summary List all constituencies with their results for an election
  */
 export const ListConstituenciesQueryParams = zod.object({
@@ -127,10 +150,14 @@ export const ListConstituenciesResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "region": zod.string(),
+  "code": zod.string(),
   "registeredVoters": zod.number(),
   "votesCast": zod.number(),
+  "spoiltVotes": zod.number(),
   "turnoutPercent": zod.number(),
   "status": zod.string().describe('declared | counting | pending'),
+  "scope": zod.string(),
+  "state": zod.string(),
   "winningPartyId": zod.number().nullish(),
   "winningPartyName": zod.string().nullish(),
   "winningPartyColor": zod.string().nullish(),
@@ -139,7 +166,9 @@ export const ListConstituenciesResponseItem = zod.object({
   "winningVotes": zod.number().nullish(),
   "margin": zod.number().nullish(),
   "latitude": zod.number().nullish(),
-  "longitude": zod.number().nullish()
+  "longitude": zod.number().nullish(),
+  "gridX": zod.number().nullish(),
+  "gridY": zod.number().nullish()
 })
 export const ListConstituenciesResponse = zod.array(ListConstituenciesResponseItem)
 
@@ -155,12 +184,18 @@ export const GetConstituencyResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "region": zod.string(),
+  "code": zod.string(),
   "registeredVoters": zod.number(),
   "votesCast": zod.number(),
+  "spoiltVotes": zod.number(),
   "turnoutPercent": zod.number(),
   "status": zod.string(),
+  "scope": zod.string(),
+  "state": zod.string(),
   "latitude": zod.number().nullish(),
   "longitude": zod.number().nullish(),
+  "gridX": zod.number().nullish(),
+  "gridY": zod.number().nullish(),
   "candidates": zod.array(zod.object({
   "id": zod.number(),
   "name": zod.string(),

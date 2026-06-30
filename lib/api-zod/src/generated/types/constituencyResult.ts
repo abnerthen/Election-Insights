@@ -10,11 +10,15 @@ export interface ConstituencyResult {
   id: number;
   name: string;
   region: string;
+  code: string;
   registeredVoters: number;
   votesCast: number;
+  spoiltVotes: number;
   turnoutPercent: number;
   /** declared | counting | pending */
   status: string;
+  scope: string;
+  state: string;
   /** @nullable */
   winningPartyId?: number | null;
   /** @nullable */
@@ -33,4 +37,8 @@ export interface ConstituencyResult {
   latitude?: number | null;
   /** @nullable */
   longitude?: number | null;
+  /** @nullable */
+  gridX?: number | null;
+  /** @nullable */
+  gridY?: number | null;
 }

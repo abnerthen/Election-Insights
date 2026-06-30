@@ -18,7 +18,8 @@ const ADMIN_SECRET = process.env.ADMIN_SECRET || "dev-admin-secret";
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
   const key = req.headers["x-admin-key"];
   if (!key || key !== ADMIN_SECRET) {
-    return res.status(401).json({ error: "Unauthorized" });
+    res.status(401).json({ error: "Unauthorized" });
+    return;
   }
   next();
 }
@@ -31,11 +32,13 @@ const VALID_STATUSES: ElectionStatus[] = ["pending", "counting", "declared"];
 // ── Create election ──────────────────────────────────────────────────────────
 router.post("/admin/elections", async (req, res) => {
   try {
-    const { name, date, totalSeats, status } = req.body as {
+    const { name, date, totalSeats, status, scope, state } = req.body as {
       name?: string;
       date?: string;
       totalSeats?: number;
       status?: ElectionStatus;
+      scope?: string;
+      state?: string;
     };
 
     if (!name || typeof name !== "string" || !name.trim()) {
@@ -44,6 +47,9 @@ router.post("/admin/elections", async (req, res) => {
     if (!date || typeof date !== "string" || !date.trim()) {
       return res.status(400).json({ error: "date is required" });
     }
+
+    const electionScope = scope || "federal";
+    const electionState = electionScope === "federal" ? null : (state || "Johor");
     const seats = Number(totalSeats) || 56;
     const electionStatus: ElectionStatus = VALID_STATUSES.includes(status as ElectionStatus)
       ? (status as ElectionStatus)
@@ -51,11 +57,26 @@ router.post("/admin/elections", async (req, res) => {
 
     const [election] = await db
       .insert(electionsTable)
-      .values({ name: name.trim(), date: date.trim(), totalSeats: seats, status: electionStatus })
+      .values({
+        name: name.trim(),
+        date: date.trim(),
+        totalSeats: seats,
+        status: electionStatus,
+        scope: electionScope,
+        state: electionState,
+      })
       .returning();
 
-    // Auto-create constituency_results rows for all constituencies
-    const constituencies = await db.select({ id: constituenciesTable.id }).from(constituenciesTable);
+    // Auto-create constituency_results rows for all constituencies in scope
+    const constituencies = await db
+      .select({ id: constituenciesTable.id })
+      .from(constituenciesTable)
+      .where(
+        electionScope === "federal"
+          ? eq(constituenciesTable.scope, "federal")
+          : and(eq(constituenciesTable.scope, "state"), eq(constituenciesTable.state, electionState!))
+      );
+
     if (constituencies.length > 0) {
       await db.insert(constituencyResultsTable).values(
         constituencies.map(c => ({
@@ -68,16 +89,18 @@ router.post("/admin/elections", async (req, res) => {
       );
     }
 
-    res.status(201).json({
+    return res.status(201).json({
       id: election.id,
       name: election.name,
       date: election.date,
       totalSeats: election.totalSeats,
       status: election.status,
+      scope: election.scope,
+      state: election.state,
     });
   } catch (err) {
     req.log.error({ err }, "Failed to create election");
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -99,10 +122,10 @@ router.put("/admin/elections/:id/status", async (req, res) => {
       .returning();
 
     if (!updated) return res.status(404).json({ error: "Not found" });
-    res.json({ id: updated.id, status: updated.status });
+    return res.json({ id: updated.id, status: updated.status });
   } catch (err) {
     req.log.error({ err }, "Failed to update election status");
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -123,14 +146,19 @@ router.put("/admin/elections/:electionId/constituencies/:constituencyId/results"
       return res.status(400).json({ error: "Invalid ids" });
     }
 
-    const { registeredVoters, status, candidates } = req.body as {
+    const { registeredVoters, status, candidates, spoiltVotes } = req.body as {
       registeredVoters?: number;
       status?: ElectionStatus;
       candidates?: CandidateEntry[];
+      spoiltVotes?: number;
     };
 
     if (typeof registeredVoters !== "number" || registeredVoters < 0) {
       return res.status(400).json({ error: "registeredVoters must be a non-negative number" });
+    }
+    const spoilt = Number(spoiltVotes) || 0;
+    if (typeof spoiltVotes !== "undefined" && (isNaN(spoilt) || spoilt < 0)) {
+      return res.status(400).json({ error: "spoiltVotes must be a non-negative number" });
     }
     if (!status || !VALID_STATUSES.includes(status)) {
       return res.status(400).json({ error: "Invalid status" });
@@ -139,16 +167,28 @@ router.put("/admin/elections/:electionId/constituencies/:constituencyId/results"
       return res.status(400).json({ error: "candidates array is required" });
     }
 
-    const totalVotes = candidates.reduce((s, c) => s + (Number(c.votes) || 0), 0);
-
-    const winnerCount = candidates.filter(c => c.isWinner).length;
-    if (status === "declared" && winnerCount !== 1) {
-      return res.status(400).json({ error: "Declared results must have exactly one winner" });
+    // Determine the winner dynamically based on the highest votes
+    let winnerIndex = -1;
+    let highestVotes = -1;
+    for (let i = 0; i < candidates.length; i++) {
+      const v = Number(candidates[i].votes) || 0;
+      if (v > highestVotes) {
+        highestVotes = v;
+        winnerIndex = i;
+      }
     }
 
+    if (status === "declared" && highestVotes <= 0) {
+      return res.status(400).json({ error: "Cannot declare results when all candidates have 0 votes" });
+    }
+
+    const totalVotes = candidates.reduce((s, c) => s + (Number(c.votes) || 0), 0) + spoilt;
+
     // Upsert each candidate and their votes
-    for (const cand of candidates) {
+    for (let i = 0; i < candidates.length; i++) {
+      const cand = candidates[i];
       let candidateId = cand.candidateId ? Number(cand.candidateId) : undefined;
+      const isWinner = (i === winnerIndex && highestVotes > 0);
 
       if (!candidateId) {
         const [newCand] = await db
@@ -183,7 +223,7 @@ router.put("/admin/elections/:electionId/constituencies/:constituencyId/results"
       if (existing.length > 0) {
         await db
           .update(candidateVotesTable)
-          .set({ votes: Number(cand.votes) || 0, isWinner: cand.isWinner ? 1 : 0 })
+          .set({ votes: Number(cand.votes) || 0, isWinner: isWinner ? 1 : 0 })
           .where(eq(candidateVotesTable.id, existing[0].id));
       } else {
         await db.insert(candidateVotesTable).values({
@@ -191,7 +231,7 @@ router.put("/admin/elections/:electionId/constituencies/:constituencyId/results"
           candidateId,
           constituencyId,
           votes: Number(cand.votes) || 0,
-          isWinner: cand.isWinner ? 1 : 0,
+          isWinner: isWinner ? 1 : 0,
         });
       }
     }
@@ -199,7 +239,12 @@ router.put("/admin/elections/:electionId/constituencies/:constituencyId/results"
     // Update constituency_results aggregate
     await db
       .update(constituencyResultsTable)
-      .set({ registeredVoters: Number(registeredVoters), votesCast: totalVotes, status })
+      .set({
+        registeredVoters: Number(registeredVoters),
+        votesCast: totalVotes,
+        spoiltVotes: spoilt,
+        status,
+      })
       .where(
         and(
           eq(constituencyResultsTable.electionId, electionId),
@@ -207,10 +252,10 @@ router.put("/admin/elections/:electionId/constituencies/:constituencyId/results"
         )
       );
 
-    res.json({ ok: true });
+    return res.json({ ok: true });
   } catch (err) {
     req.log.error({ err }, "Failed to upsert results");
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -262,8 +307,9 @@ router.get("/admin/elections/:electionId/constituencies/:constituencyId/candidat
       )
       .limit(1);
 
-    res.json({
+    return res.json({
       registeredVoters: result?.registeredVoters ?? 0,
+      spoiltVotes: result?.spoiltVotes ?? 0,
       status: result?.status ?? "pending",
       candidates: rows.map(r => ({
         candidateId: r.candidateId,
@@ -278,7 +324,7 @@ router.get("/admin/elections/:electionId/constituencies/:constituencyId/candidat
     });
   } catch (err) {
     req.log.error({ err }, "Failed to get candidates");
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 

@@ -11,13 +11,21 @@ export interface ConstituencyDetail {
   id: number;
   name: string;
   region: string;
+  code: string;
   registeredVoters: number;
   votesCast: number;
+  spoiltVotes: number;
   turnoutPercent: number;
   status: string;
+  scope: string;
+  state: string;
   /** @nullable */
   latitude?: number | null;
   /** @nullable */
   longitude?: number | null;
+  /** @nullable */
+  gridX?: number | null;
+  /** @nullable */
+  gridY?: number | null;
   candidates: CandidateResult[];
 }

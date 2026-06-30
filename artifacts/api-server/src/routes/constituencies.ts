@@ -21,10 +21,16 @@ router.get("/constituencies", async (req, res) => {
         id: constituenciesTable.id,
         name: constituenciesTable.name,
         region: constituenciesTable.region,
+        code: constituenciesTable.code,
         latitude: constituenciesTable.latitude,
         longitude: constituenciesTable.longitude,
+        gridX: constituenciesTable.gridX,
+        gridY: constituenciesTable.gridY,
+        scope: constituenciesTable.scope,
+        state: constituenciesTable.state,
         registeredVoters: constituencyResultsTable.registeredVoters,
         votesCast: constituencyResultsTable.votesCast,
+        spoiltVotes: constituencyResultsTable.spoiltVotes,
         status: constituencyResultsTable.status,
         electionId: constituencyResultsTable.electionId,
       })
@@ -76,8 +82,12 @@ router.get("/constituencies", async (req, res) => {
           id: r.id,
           name: r.name,
           region: r.region,
+          code: r.code ?? "",
+          scope: r.scope,
+          state: r.state,
           registeredVoters: r.registeredVoters,
           votesCast: r.votesCast,
+          spoiltVotes: r.spoiltVotes,
           turnoutPercent,
           status: r.status,
           winningPartyId: winner?.partyId ?? null,
@@ -89,6 +99,8 @@ router.get("/constituencies", async (req, res) => {
           margin: null,
           latitude: r.latitude ?? null,
           longitude: r.longitude ?? null,
+          gridX: r.gridX ?? null,
+          gridY: r.gridY ?? null,
         };
       })
     );
@@ -116,6 +128,7 @@ router.get("/constituencies/:id", async (req, res) => {
         constituencyId: constituencyResultsTable.constituencyId,
         registeredVoters: constituencyResultsTable.registeredVoters,
         votesCast: constituencyResultsTable.votesCast,
+        spoiltVotes: constituencyResultsTable.spoiltVotes,
         status: constituencyResultsTable.status,
       })
       .from(constituencyResultsTable)
@@ -162,16 +175,22 @@ router.get("/constituencies/:id", async (req, res) => {
 
     const totalVotes = candidateRows.reduce((sum, c) => sum + c.votes, 0);
 
-    res.json({
+    return res.json({
       id: constituency.id,
       name: constituency.name,
       region: constituency.region,
+      code: constituency.code ?? "",
+      scope: constituency.scope,
+      state: constituency.state,
       registeredVoters: result.registeredVoters,
       votesCast: result.votesCast,
+      spoiltVotes: result.spoiltVotes,
       turnoutPercent,
       status: result.status,
       latitude: constituency.latitude ?? null,
       longitude: constituency.longitude ?? null,
+      gridX: constituency.gridX ?? null,
+      gridY: constituency.gridY ?? null,
       candidates: candidateRows.map((c) => ({
         id: c.candidateId,
         name: c.candidateName,
@@ -187,7 +206,7 @@ router.get("/constituencies/:id", async (req, res) => {
     });
   } catch (err) {
     req.log.error({ err }, "Failed to get constituency");
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 

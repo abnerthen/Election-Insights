@@ -22,6 +22,8 @@ router.get("/elections", async (req, res) => {
         date: e.date,
         totalSeats: e.totalSeats,
         status: e.status,
+        scope: e.scope,
+        state: e.state,
       }))
     );
   } catch (err) {
@@ -38,16 +40,18 @@ router.get("/elections/:id", async (req, res) => {
     const [election] = await db.select().from(electionsTable).where(eq(electionsTable.id, id));
     if (!election) return res.status(404).json({ error: "Not found" });
 
-    res.json({
+    return res.json({
       id: election.id,
       name: election.name,
       date: election.date,
       totalSeats: election.totalSeats,
       status: election.status,
+      scope: election.scope,
+      state: election.state,
     });
   } catch (err) {
     req.log.error({ err }, "Failed to get election");
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -108,7 +112,7 @@ router.get("/elections/:id/summary", async (req, res) => {
 
     const majorityThreshold = Math.floor(election.totalSeats / 2) + 1;
 
-    res.json({
+    return res.json({
       electionId: election.id,
       electionName: election.name,
       totalRegisteredVoters,
@@ -123,7 +127,7 @@ router.get("/elections/:id/summary", async (req, res) => {
     });
   } catch (err) {
     req.log.error({ err }, "Failed to get election summary");
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -153,7 +157,7 @@ router.get("/elections/:id/seat-breakdown", async (req, res) => {
       .groupBy(partiesTable.id, partiesTable.name, partiesTable.abbreviation, partiesTable.color)
       .orderBy(sql`count(${candidateVotesTable.id}) desc`);
 
-    res.json(
+    return res.json(
       rows.map((r) => ({
         partyId: r.partyId,
         partyName: r.partyName,
@@ -164,7 +168,7 @@ router.get("/elections/:id/seat-breakdown", async (req, res) => {
     );
   } catch (err) {
     req.log.error({ err }, "Failed to get seat breakdown");
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -195,7 +199,7 @@ router.get("/elections/:id/vote-share", async (req, res) => {
 
     const grandTotal = rows.reduce((sum, r) => sum + Number(r.totalVotes), 0);
 
-    res.json(
+    return res.json(
       rows.map((r) => ({
         partyId: r.partyId,
         partyName: r.partyName,
@@ -210,7 +214,7 @@ router.get("/elections/:id/vote-share", async (req, res) => {
     );
   } catch (err) {
     req.log.error({ err }, "Failed to get vote share");
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 

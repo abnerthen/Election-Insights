@@ -5,10 +5,27 @@ import { useListElections, getListElectionsQueryKey, useListConstituencies, getL
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useCreateParty } from "@workspace/api-client-react";
+import { Textarea } from "@/components/ui/textarea";
+
+const MALAYSIAN_STATES = [
+  "Johor",
+  "Selangor",
+  "Penang",
+  "Kedah",
+  "Kelantan",
+  "Terengganu",
+  "Pahang",
+  "Negeri Sembilan",
+  "Melaka",
+  "Perlis",
+  "Sabah",
+  "Sarawak"
+];
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -60,8 +77,10 @@ function PasswordGate({ onAuth }: { onAuth: (key: string) => void }) {
       // 400 (bad body) is fine — it means auth passed
       sessionStorage.setItem("admin_key", key);
       onAuth(key);
-    } catch {
-      setError("Could not reach the server.");
+    } catch (err) {
+      setError(
+        `Could not reach the server: ${err instanceof Error ? err.message : String(err)}. Check that the API server is running and the port is correct.`
+      );
     }
     setLoading(false);
   }
@@ -97,7 +116,6 @@ function PasswordGate({ onAuth }: { onAuth: (key: string) => void }) {
   );
 }
 
-// ── Candidate form row ────────────────────────────────────────────────────────
 interface CandidateRow {
   candidateId?: number;
   name: string;
@@ -108,27 +126,28 @@ interface CandidateRow {
 
 interface Party { id: number; name: string; abbreviation: string; color: string; }
 
+// ── Candidate form row ────────────────────────────────────────────
 function CandidateFormRow({
-  cand, index, parties, onChange, onRemove, onSetWinner, isWinner
+  cand, index, parties, onChange, onRemove, isWinner
 }: {
   cand: CandidateRow;
   index: number;
   parties: Party[];
   onChange: (field: keyof CandidateRow, val: string | number | boolean) => void;
   onRemove: () => void;
-  onSetWinner: () => void;
   isWinner: boolean;
 }) {
   const party = parties.find(p => p.id === cand.partyId);
   return (
     <div className={`flex items-center gap-2 p-3 rounded-lg border ${isWinner ? "border-green-500/50 bg-green-950/20" : "border-border bg-secondary/30"}`}>
-      {/* Winner radio */}
-      <button
-        type="button"
-        onClick={onSetWinner}
-        className={`w-5 h-5 rounded-full border-2 flex-shrink-0 transition-colors ${isWinner ? "border-green-500 bg-green-500" : "border-muted-foreground"}`}
-        title="Set as winner"
-      />
+      {/* Auto-Winner Indicator */}
+      {isWinner ? (
+        <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0 text-white font-bold text-xs select-none" title="Projected Winner">
+          ✓
+        </div>
+      ) : (
+        <div className="w-5 h-5 rounded-full border-2 border-muted-foreground flex-shrink-0" title="Runner-up" />
+      )}
 
       {/* Party dot */}
       <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: party?.color || "#64748b" }} />
@@ -177,7 +196,7 @@ function CandidateFormRow({
 
 // ── Constituency entry dialog ─────────────────────────────────────────────────
 interface ConstituencyInfo {
-  id: number; name: string; region: string;
+  id: number; name: string; region: string; code?: string;
   status: string;
   winningPartyColor?: string | null;
   winningPartyAbbreviation?: string | null;
@@ -197,6 +216,7 @@ function EntryDialog({
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [registeredVoters, setRegisteredVoters] = useState(0);
+  const [spoiltVotes, setSpoiltVotes] = useState(0);
   const [status, setStatus] = useState<"pending" | "counting" | "declared">("pending");
   const [candidates, setCandidates] = useState<CandidateRow[]>([]);
   const [fetching, setFetching] = useState(false);
@@ -207,6 +227,7 @@ function EntryDialog({
     adminFetch(`/admin/elections/${electionId}/constituencies/${constituency.id}/candidates`, adminKey)
       .then(data => {
         setRegisteredVoters(data.registeredVoters || 0);
+        setSpoiltVotes(data.spoiltVotes || 0);
         setStatus(data.status || "pending");
         if (data.candidates.length > 0) {
           setCandidates(data.candidates.map((c: CandidateRow & { partyId: number }) => ({
@@ -224,6 +245,9 @@ function EntryDialog({
         }
       })
       .catch(() => {
+        setRegisteredVoters(0);
+        setSpoiltVotes(0);
+        setStatus("pending");
         setCandidates([
           { name: "", partyId: parties[0]?.id || 9, votes: 0, isWinner: false },
           { name: "", partyId: parties[0]?.id || 9, votes: 0, isWinner: false },
@@ -244,11 +268,9 @@ function EntryDialog({
     setCandidates(prev => prev.filter((_, i) => i !== idx));
   }
 
-  function setWinner(idx: number) {
-    setCandidates(prev => prev.map((c, i) => ({ ...c, isWinner: i === idx })));
-  }
-
-  const totalVotes = candidates.reduce((s, c) => s + (c.votes || 0), 0);
+  const totalValidVotes = candidates.reduce((s, c) => s + (c.votes || 0), 0);
+  const totalVotesCast = totalValidVotes + spoiltVotes;
+  const maxVotes = Math.max(...candidates.map(c => c.votes || 0));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -265,10 +287,15 @@ function EntryDialog({
         adminKey,
         {
           method: "PUT",
-          body: JSON.stringify({ registeredVoters, status, candidates: filled }),
+          body: JSON.stringify({
+            registeredVoters,
+            status,
+            spoiltVotes,
+            candidates: filled,
+          }),
         }
       );
-      toast({ title: `${constituency.name} saved`, description: `${filled.length} candidates · ${totalVotes.toLocaleString()} votes` });
+      toast({ title: `${constituency.name} saved`, description: `${filled.length} candidates · ${totalVotesCast.toLocaleString()} votes cast` });
       onSaved();
       onClose();
     } catch (err: unknown) {
@@ -284,7 +311,7 @@ function EntryDialog({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-serif text-2xl flex items-center gap-3">
-            {constituency?.name}
+            {constituency?.code ? `[${constituency.code}] ` : ""}{constituency?.name}
             <span className="text-sm text-muted-foreground font-sans font-normal">{constituency?.region}</span>
           </DialogTitle>
         </DialogHeader>
@@ -296,7 +323,7 @@ function EntryDialog({
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             {/* Meta row */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-1.5 block">
                   Registered Voters
@@ -307,6 +334,18 @@ function EntryDialog({
                   value={registeredVoters || ""}
                   onChange={e => setRegisteredVoters(parseInt(e.target.value) || 0)}
                   placeholder="e.g. 25000"
+                />
+              </div>
+              <div>
+                <label className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-1.5 block">
+                  Spoilt Votes
+                </label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={spoiltVotes || ""}
+                  onChange={e => setSpoiltVotes(parseInt(e.target.value) || 0)}
+                  placeholder="e.g. 150"
                 />
               </div>
               <div>
@@ -330,9 +369,9 @@ function EntryDialog({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="text-xs uppercase tracking-widest text-muted-foreground font-bold">
-                  Candidates · {candidates.filter(c => c.name).length} entered · {totalVotes.toLocaleString()} total votes
+                  Candidates · {candidates.filter(c => c.name).length} entered · {totalValidVotes.toLocaleString()} valid votes
                 </label>
-                <span className="text-xs text-muted-foreground">Click ○ to set winner</span>
+                <span className="text-xs text-muted-foreground">Winner set automatically to the highest votes</span>
               </div>
               <div className="flex flex-col gap-2">
                 {candidates.map((cand, i) => (
@@ -341,10 +380,9 @@ function EntryDialog({
                     index={i}
                     cand={cand}
                     parties={parties}
-                    isWinner={cand.isWinner}
+                    isWinner={cand.votes === maxVotes && maxVotes > 0}
                     onChange={(field, val) => updateCandidate(i, field, val)}
                     onRemove={() => removeCandidate(i)}
-                    onSetWinner={() => setWinner(i)}
                   />
                 ))}
               </div>
@@ -358,10 +396,11 @@ function EntryDialog({
             </div>
 
             {/* Turnout preview */}
-            {registeredVoters > 0 && totalVotes > 0 && (
+            {registeredVoters > 0 && totalVotesCast > 0 && (
               <div className="bg-secondary/50 rounded-lg px-4 py-2 text-sm text-muted-foreground flex gap-6">
-                <span>Turnout: <strong className="text-foreground">{((totalVotes / registeredVoters) * 100).toFixed(1)}%</strong></span>
-                <span>Votes cast: <strong className="text-foreground">{totalVotes.toLocaleString()}</strong></span>
+                <span>Turnout: <strong className="text-foreground">{((totalVotesCast / registeredVoters) * 100).toFixed(1)}%</strong></span>
+                <span>Valid: <strong className="text-foreground">{totalValidVotes.toLocaleString()}</strong></span>
+                <span>Spoilt: <strong className="text-foreground">{spoiltVotes.toLocaleString()}</strong></span>
               </div>
             )}
 
@@ -386,15 +425,43 @@ function NewElectionDialog({ open, onClose, adminKey, onCreated }: {
   const { toast } = useToast();
   const [name, setName] = useState("");
   const [date, setDate] = useState("");
+  const [scope, setScope] = useState<"federal" | "state">("federal");
+  const [stateName, setStateName] = useState("Johor");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+
+    const SEAT_COUNTS: Record<string, number> = {
+      federal: 114,
+      Johor: 56,
+      Selangor: 56,
+      Penang: 40,
+      Kedah: 36,
+      Kelantan: 45,
+      Terengganu: 32,
+      Pahang: 42,
+      "Negeri Sembilan": 36,
+      Melaka: 28,
+      Perlis: 15,
+      Sabah: 73,
+      Sarawak: 82,
+    };
+
+    const seats = scope === "federal" ? SEAT_COUNTS.federal : (SEAT_COUNTS[stateName] || 40);
+
     try {
       await adminFetch("/admin/elections", adminKey, {
         method: "POST",
-        body: JSON.stringify({ name, date, totalSeats: 56, status: "pending" }),
+        body: JSON.stringify({
+          name: name.trim(),
+          date: date.trim(),
+          totalSeats: seats,
+          status: "pending",
+          scope,
+          state: scope === "state" ? stateName : null
+        }),
       });
       toast({ title: "Election created", description: name });
       onCreated();
@@ -415,12 +482,39 @@ function NewElectionDialog({ open, onClose, adminKey, onCreated }: {
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 pt-2">
           <div>
             <label className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-1.5 block">Election Name</label>
-            <Input value={name} onChange={e => setName(e.target.value)} placeholder="Johor State Election 2026" required />
+            <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Selangor election..." required />
           </div>
           <div>
             <label className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-1.5 block">Date</label>
             <Input type="date" value={date} onChange={e => setDate(e.target.value)} required />
           </div>
+          <div>
+            <label className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-1.5 block">Level</label>
+            <Select value={scope} onValueChange={(v) => setScope(v as "federal" | "state")}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="federal">Parliament (Federal)</SelectItem>
+                <SelectItem value="state">State Assembly</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {scope === "state" && (
+            <div>
+              <label className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-1.5 block">State</label>
+              <Select value={stateName} onValueChange={setStateName}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MALAYSIAN_STATES.map((st) => (
+                    <SelectItem key={st} value={st}>{st}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={loading || !name || !date}>{loading ? "Creating…" : "Create"}</Button>
@@ -430,6 +524,68 @@ function NewElectionDialog({ open, onClose, adminKey, onCreated }: {
     </Dialog>
   );
 }
+
+// - Add Party Dialog
+
+function AddPartyDialog() {
+  const createParty = useCreateParty();
+  const queryClient = useQueryClient();
+  const [isOpen, setIsOpen] = useState(false);
+  const [form, setForm] = useState({ name: "", abbreviation: "", color: "#3b82f6", description: "" });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await createParty.mutateAsync({
+      data: form
+    });
+    // Invalidate parties list to refresh candidate party dropdowns automatically
+    queryClient.invalidateQueries({ queryKey: getListPartiesQueryKey() });
+    setIsOpen(false);
+    setForm({ name: "", abbreviation: "", color: "#3b82f6", description: "" });
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline" className="gap-1.5 h-9">
+          <Plus className="w-3.5 h-3.5" /> New Party
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add New Party</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-sm font-bold uppercase">Party Name</label>
+            <Input value={form.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, name: e.target.value })} required />
+          </div>
+          <div>
+            <label className="text-sm font-bold uppercase">Abbreviation</label>
+            <Input value={form.abbreviation} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, abbreviation: e.target.value })} required />
+          </div>
+          <div>
+            <label className="text-sm font-bold uppercase">Theme Color</label>
+            <div className="flex gap-2">
+              <Input type="color" value={form.color} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, color: e.target.value })} className="w-12 p-0 h-10 border-0" />
+              <Input value={form.color} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, color: e.target.value })} required />
+            </div>
+          </div>
+          <div>
+            <label className="text-sm font-bold uppercase">Description</label>
+            <Textarea value={form.description} onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setForm({ ...form, description: e.target.value })} />
+          </div>
+          <DialogFooter>
+            <Button type="submit" disabled={createParty.isPending}>
+              {createParty.isPending ? "Creating..." : "Save Party"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 // ── Main admin panel ──────────────────────────────────────────────────────────
 const STATUS_STYLE: Record<string, string> = {
@@ -445,6 +601,7 @@ function AdminPanel({ adminKey, onLogout }: { adminKey: string; onLogout: () => 
   const [selectedConstituency, setSelectedConstituency] = useState<ConstituencyInfo | null>(null);
   const [showNewElection, setShowNewElection] = useState(false);
   const [filter, setFilter] = useState<"all" | "pending" | "counting" | "declared">("all");
+  const [sortBy, setSortBy] = useState<"name" | "code">("name");
 
   const { data: elections, refetch: refetchElections } = useListElections({
     query: { queryKey: getListElectionsQueryKey(), refetchInterval: 5000 }
@@ -505,6 +662,7 @@ function AdminPanel({ adminKey, onLogout }: { adminKey: string; onLogout: () => 
           <Button size="sm" variant="outline" className="gap-1.5 h-9" onClick={() => setShowNewElection(true)}>
             <Plus className="w-3.5 h-3.5" /> New Election
           </Button>
+          <AddPartyDialog />
         </div>
 
         <div className="flex items-center gap-2">
@@ -538,19 +696,44 @@ function AdminPanel({ adminKey, onLogout }: { adminKey: string; onLogout: () => 
                 <span className="font-bold text-foreground">{currentElection?.name}</span>
                 {" · "}{currentElection?.date}
               </div>
-              <div className="flex gap-2 ml-auto">
-                {(["all", "declared", "counting", "pending"] as const).map(f => (
-                  <button
-                    key={f}
-                    onClick={() => setFilter(f)}
-                    className={`text-xs uppercase tracking-wider font-bold px-3 py-1 rounded border transition-colors ${filter === f ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground"}`}
-                  >
-                    {f === "all" ? `All (${constituencies?.length ?? 0})` :
-                     f === "declared" ? `Declared (${counts.declared})` :
-                     f === "counting" ? `Counting (${counts.counting})` :
-                     `Pending (${counts.pending})`}
-                  </button>
-                ))}
+
+              <div className="flex items-center gap-4 ml-auto flex-wrap">
+                {/* Sort Toggle */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Sort by:</span>
+                  <div className="bg-secondary/40 p-0.5 rounded border border-border/40 flex text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setSortBy("name")}
+                      className={`px-2 py-0.5 rounded font-bold uppercase tracking-wider transition-colors ${sortBy === "name" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    >
+                      Name
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSortBy("code")}
+                      className={`px-2 py-0.5 rounded font-bold uppercase tracking-wider transition-colors ${sortBy === "code" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    >
+                      Code
+                    </button>
+                  </div>
+                </div>
+
+                {/* Filters */}
+                <div className="flex gap-2">
+                  {(["all", "declared", "counting", "pending"] as const).map(f => (
+                    <button
+                      key={f}
+                      onClick={() => setFilter(f)}
+                      className={`text-xs uppercase tracking-wider font-bold px-3 py-1 rounded border transition-colors ${filter === f ? "bg-primary text-primary-foreground" : "border-border text-muted-foreground hover:text-foreground"}`}
+                    >
+                      {f === "all" ? `All (${constituencies?.length ?? 0})` :
+                        f === "declared" ? `Declared (${counts.declared})` :
+                          f === "counting" ? `Counting (${counts.counting})` :
+                            `Pending (${counts.pending})`}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -561,8 +744,8 @@ function AdminPanel({ adminKey, onLogout }: { adminKey: string; onLogout: () => 
                 <div className="text-xs uppercase tracking-widest text-muted-foreground mt-1">Declared</div>
               </div>
               <div className="flex-1 h-3 bg-secondary rounded-full overflow-hidden flex">
-                <div className="h-full bg-green-500 transition-all duration-500" style={{ width: `${(counts.declared / 56) * 100}%` }} />
-                <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${(counts.counting / 56) * 100}%` }} />
+                <div className="h-full bg-green-500 transition-all duration-500" style={{ width: `${(counts.declared / (currentElection?.totalSeats || 56)) * 100}%` }} />
+                <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${(counts.counting / (currentElection?.totalSeats || 56)) * 100}%` }} />
               </div>
               <div className="text-center">
                 <div className="text-3xl font-serif font-bold text-amber-400">{counts.counting}</div>
@@ -576,29 +759,42 @@ function AdminPanel({ adminKey, onLogout }: { adminKey: string; onLogout: () => 
 
             {/* Constituency grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2">
-              {filtered
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map(c => (
-                  <button
-                    key={c.id}
-                    onClick={() => setSelectedConstituency(c as ConstituencyInfo)}
-                    className={`p-2.5 rounded-lg border text-left transition-all hover:scale-[1.02] hover:shadow-lg ${STATUS_STYLE[c.status] || STATUS_STYLE.pending}`}
-                  >
-                    <div className="flex items-start justify-between gap-1 mb-1">
-                      <span className="text-xs font-bold leading-tight line-clamp-2">{c.name}</span>
-                      {c.winningPartyColor && (
-                        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-0.5" style={{ backgroundColor: c.winningPartyColor }} />
-                      )}
-                    </div>
-                    <div className="text-xs opacity-70 truncate">{c.region}</div>
-                    {c.winningPartyAbbreviation && (
-                      <div className="text-xs font-bold mt-1" style={{ color: c.winningPartyColor || "inherit" }}>
-                        {c.winningPartyAbbreviation}
+              {(() => {
+                const compareCodes = (a: any, b: any) => {
+                  const codeA = a.code || "";
+                  const codeB = b.code || "";
+                  return codeA.localeCompare(codeB, undefined, { numeric: true, sensitivity: 'base' });
+                };
+
+                return [...filtered]
+                  .sort((a, b) => {
+                    if (sortBy === "code") return compareCodes(a, b);
+                    return a.name.localeCompare(b.name);
+                  })
+                  .map(c => (
+                    <button
+                      key={c.id}
+                      onClick={() => setSelectedConstituency(c as ConstituencyInfo)}
+                      className={`p-2.5 rounded-lg border text-left transition-all hover:scale-[1.02] hover:shadow-lg ${STATUS_STYLE[c.status] || STATUS_STYLE.pending}`}
+                    >
+                      <div className="flex items-start justify-between gap-1 mb-1">
+                        <span className="text-xs font-bold leading-tight line-clamp-2">
+                          {c.code ? `[${c.code}] ` : ""}{c.name}
+                        </span>
+                        {c.winningPartyColor && (
+                          <div className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-0.5" style={{ backgroundColor: c.winningPartyColor }} />
+                        )}
                       </div>
-                    )}
-                    <div className="text-xs opacity-60 mt-0.5 capitalize">{c.status}</div>
-                  </button>
-                ))}
+                      <div className="text-xs opacity-70 truncate">{c.region}</div>
+                      {c.winningPartyAbbreviation && (
+                        <div className="text-xs font-bold mt-1" style={{ color: c.winningPartyColor || "inherit" }}>
+                          {c.winningPartyAbbreviation}
+                        </div>
+                      )}
+                      <div className="text-xs opacity-60 mt-0.5 capitalize">{c.status}</div>
+                    </button>
+                  ));
+              })()}
             </div>
           </>
         )}

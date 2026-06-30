@@ -13,4 +13,7 @@ export interface Election {
   totalSeats: number;
   /** declared | counting | pending */
   status: string;
+  scope: string;
+  /** @nullable */
+  state?: string | null;
 }

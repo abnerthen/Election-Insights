@@ -5,6 +5,13 @@
  * Election Results API
  * OpenAPI spec version: 0.1.0
  */
+export interface CreatePartyRequest {
+  name: string;
+  abbreviation: string;
+  color: string;
+  description?: string;
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -16,6 +23,9 @@ export interface Election {
   totalSeats: number;
   /** declared | counting | pending */
   status: string;
+  scope: string;
+  /** @nullable */
+  state?: string | null;
 }
 
 export interface ElectionSummary {
@@ -65,11 +75,15 @@ export interface ConstituencyResult {
   id: number;
   name: string;
   region: string;
+  code: string;
   registeredVoters: number;
   votesCast: number;
+  spoiltVotes: number;
   turnoutPercent: number;
   /** declared | counting | pending */
   status: string;
+  scope: string;
+  state: string;
   /** @nullable */
   winningPartyId?: number | null;
   /** @nullable */
@@ -88,6 +102,10 @@ export interface ConstituencyResult {
   latitude?: number | null;
   /** @nullable */
   longitude?: number | null;
+  /** @nullable */
+  gridX?: number | null;
+  /** @nullable */
+  gridY?: number | null;
 }
 
 export interface CandidateResult {
@@ -106,14 +124,22 @@ export interface ConstituencyDetail {
   id: number;
   name: string;
   region: string;
+  code: string;
   registeredVoters: number;
   votesCast: number;
+  spoiltVotes: number;
   turnoutPercent: number;
   status: string;
+  scope: string;
+  state: string;
   /** @nullable */
   latitude?: number | null;
   /** @nullable */
   longitude?: number | null;
+  /** @nullable */
+  gridX?: number | null;
+  /** @nullable */
+  gridY?: number | null;
   candidates: CandidateResult[];
 }
 

@@ -10,7 +10,7 @@ import { SeatDiagram } from "@/components/seat-diagram";
 import { GaugeCard } from "@/components/gauge-card";
 import { PieChartCard } from "@/components/pie-chart-card";
 import { ConstituencyMap } from "@/components/constituency-map";
-import { JohorMap } from "@/components/johor-map";
+import { ElectionMap } from "@/components/election-map";
 
 export function HomePage({ currentElectionId }: { currentElectionId: number | null }) {
   if (!currentElectionId) {
@@ -42,6 +42,8 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
       </div>
     );
   }
+
+  const isJohorState = election?.scope === "state" && election?.state === "Johor";
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -81,11 +83,11 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
               <div className="relative w-full h-1.5 bg-secondary rounded-full mt-2">
                 <div
                   className="absolute left-0 top-0 h-full bg-amber-400/60 rounded-full"
-                  style={{ width: `${(summary.majorityThreshold / summary.seatsTotal) * 100}%` }}
+                  style={{ width: `${((summary.majorityThreshold ?? 0) / summary.seatsTotal) * 100}%` }}
                 />
                 <div
                   className="absolute top-1/2 -translate-y-1/2 w-0.5 h-3 bg-amber-400 rounded"
-                  style={{ left: `${(summary.majorityThreshold / summary.seatsTotal) * 100}%` }}
+                  style={{ left: `${((summary.majorityThreshold ?? 0) / summary.seatsTotal) * 100}%` }}
                 />
               </div>
             </div>
@@ -126,7 +128,7 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
                   <div className="text-sm text-muted-foreground mt-2">
                     {summary.leadingPartySeats} seats won
                   </div>
-                  {summary.leadingPartySeats != null && (
+                  {summary.leadingPartySeats != null && summary.majorityThreshold != null && (
                     <div className="text-xs mt-1 font-semibold" style={{ color: summary.leadingPartyColor || "white" }}>
                       {summary.leadingPartySeats >= summary.majorityThreshold
                         ? "✓ Majority secured"
@@ -151,12 +153,12 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
       {/* Main Views */}
       <Tabs defaultValue="seats" className="w-full">
         <div className="flex justify-center mb-8">
-          <TabsList className="bg-secondary p-1 rounded-md grid grid-cols-3 w-96">
+          <TabsList className="bg-secondary/40 p-1 rounded-md grid grid-cols-3 w-96 border border-border/40">
             <TabsTrigger value="seats" className="font-bold tracking-wider uppercase text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               Hemicycle
             </TabsTrigger>
-            <TabsTrigger value="johor" className="font-bold tracking-wider uppercase text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              Johor Map
+            <TabsTrigger value="map" className="font-bold tracking-wider uppercase text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Map View
             </TabsTrigger>
             <TabsTrigger value="grid" className="font-bold tracking-wider uppercase text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               Grid View
@@ -168,10 +170,10 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
           <div className="bg-card border border-border rounded-xl p-8 shadow-2xl relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/20 pointer-events-none" />
             <h2 className="text-center font-serif text-2xl mb-1 uppercase tracking-widest text-muted-foreground">
-              Johor State Assembly
+              {election?.scope === "federal" ? "Federal Parliament" : `${election?.state || "State"} Assembly`}
             </h2>
             <p className="text-center text-xs text-muted-foreground mb-6 tracking-widest uppercase">
-              Dewan Undangan Negeri Johor — {summary?.seatsTotal} seats
+              {election?.scope === "federal" ? "Dewan Rakyat" : `Dewan Undangan Negeri ${election?.state || ""}`} — {summary?.seatsTotal} seats
             </p>
             {seatBreakdown && summary && (
               <SeatDiagram
@@ -237,15 +239,21 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
           </div>
         </TabsContent>
 
-        <TabsContent value="johor" className="mt-0">
+        <TabsContent value="map" className="mt-0">
           <div className="bg-card border border-border rounded-xl p-6 shadow-2xl">
             <h2 className="text-center font-serif text-2xl mb-2 uppercase tracking-widest text-muted-foreground">
-              Johor State Map
+              {election?.scope === "federal" ? "Malaysia National Map" : `${election?.state || "State"} Map`}
             </h2>
             <p className="text-center text-xs text-muted-foreground mb-6 tracking-widest uppercase">
               Click any constituency to view full results
             </p>
-            {constituencies && <JohorMap constituencies={constituencies} />}
+            {constituencies && (
+              <ElectionMap
+                constituencies={constituencies}
+                scope={election?.scope as "federal" | "state"}
+                stateName={election?.state ?? null}
+              />
+            )}
           </div>
         </TabsContent>
 

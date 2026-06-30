@@ -33,9 +33,9 @@ export function ConstituencyPage() {
 
       <div className="bg-card border border-border rounded-xl overflow-hidden shadow-2xl">
         {/* Header Header */}
-        <div 
+        <div
           className="p-8 relative"
-          style={{ 
+          style={{
             backgroundColor: isDeclared && winner ? `${winner.partyColor}20` : undefined,
             borderBottom: isDeclared && winner ? `4px solid ${winner.partyColor}` : '4px solid var(--border)'
           }}
@@ -48,11 +48,21 @@ export function ConstituencyPage() {
               </div>
               <h1 className="text-5xl font-serif font-bold text-foreground tracking-tight">{constituency.name}</h1>
             </div>
-            
-            <div className="bg-background/80 backdrop-blur px-4 py-2 rounded border border-border text-center">
-              <div className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-1">Status</div>
-              <div className={`font-bold ${isDeclared ? 'text-green-500' : 'text-amber-500'} uppercase`}>
-                {constituency.status}
+
+            <div className="flex gap-2">
+              {constituency.code && (
+                <div className="bg-background/80 backdrop-blur px-4 py-2 rounded border border-border text-center">
+                  <div className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-1">Code</div>
+                  <div className="font-mono font-bold text-primary uppercase">
+                    {constituency.code}
+                  </div>
+                </div>
+              )}
+              <div className="bg-background/80 backdrop-blur px-4 py-2 rounded border border-border text-center">
+                <div className="text-xs uppercase tracking-widest text-muted-foreground font-bold mb-1">Status</div>
+                <div className={`font-bold ${isDeclared ? 'text-green-500' : 'text-amber-500'} uppercase`}>
+                  {constituency.status}
+                </div>
               </div>
             </div>
           </div>
@@ -75,11 +85,11 @@ export function ConstituencyPage() {
         <div className="p-8 grid md:grid-cols-3 gap-8">
           <div className="md:col-span-2">
             <h2 className="font-serif text-2xl uppercase tracking-widest mb-6">Results</h2>
-            
+
             <div className="space-y-4">
               {constituency.candidates.sort((a, b) => b.votes - a.votes).map(candidate => (
-                <div 
-                  key={candidate.id} 
+                <div
+                  key={candidate.id}
                   className={`bg-background border p-4 rounded-lg transition-colors ${candidate.isWinner ? 'border-l-4' : 'border-border'}`}
                   style={candidate.isWinner ? { borderLeftColor: candidate.partyColor } : {}}
                 >
@@ -96,12 +106,12 @@ export function ConstituencyPage() {
                       <div className="text-sm text-muted-foreground">{candidate.voteSharePercent.toFixed(1)}%</div>
                     </div>
                   </div>
-                  
+
                   {/* Bar */}
                   <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className="h-full transition-all duration-1000 ease-out"
-                      style={{ 
+                      style={{
                         width: `${candidate.voteSharePercent}%`,
                         backgroundColor: candidate.partyColor
                       }}
@@ -119,7 +129,7 @@ export function ConstituencyPage() {
                 <div className="text-sm text-muted-foreground uppercase tracking-widest font-bold mb-1">Voter Turnout</div>
                 <div className="text-3xl font-serif font-bold text-foreground">{constituency.turnoutPercent.toFixed(1)}%</div>
               </div>
-              
+
               <div>
                 <div className="text-sm text-muted-foreground uppercase tracking-widest font-bold mb-1">Total Votes Cast</div>
                 <div className="text-2xl font-serif font-bold text-foreground flex items-center gap-2">
@@ -127,7 +137,7 @@ export function ConstituencyPage() {
                   {constituency.votesCast.toLocaleString()}
                 </div>
               </div>
-              
+
               <div>
                 <div className="text-sm text-muted-foreground uppercase tracking-widest font-bold mb-1">Registered Voters</div>
                 <div className="text-xl font-serif font-bold text-muted-foreground">{constituency.registeredVoters.toLocaleString()}</div>

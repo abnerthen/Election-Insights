@@ -22,4 +22,25 @@ router.get("/parties", async (req, res) => {
   }
 });
 
+router.post("/parties", async (req, res) => {
+  try {
+    const { name, abbreviation, color, description } = req.body;
+
+    const [newParty] = await db
+      .insert(partiesTable)
+      .values({
+        name,
+        abbreviation,
+        color,
+        description,
+      })
+      .returning();
+
+    res.status(201).json(newParty);
+  } catch (err) {
+    req.log.error({ err }, "Failed to create party");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router;

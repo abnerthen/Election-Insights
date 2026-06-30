@@ -6,11 +6,15 @@
  * OpenAPI spec version: 0.1.0
  */
 import {
+  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
@@ -18,6 +22,7 @@ import type {
 import type {
   ConstituencyDetail,
   ConstituencyResult,
+  CreatePartyRequest,
   Election,
   ElectionSummary,
   HealthStatus,
@@ -28,7 +33,7 @@ import type {
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
-import type { ErrorType } from '../custom-fetch';
+import type { ErrorType , BodyType } from '../custom-fetch';
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -593,6 +598,76 @@ export function useListParties<TData = Awaited<ReturnType<typeof listParties>>, 
 
 
 
+
+export const getCreatePartyUrl = () => {
+
+
+
+
+  return `/api/parties`
+}
+
+/**
+ * @summary Add a new political party
+ */
+export const createParty = async (createPartyRequest: CreatePartyRequest, options?: RequestInit): Promise<Party> => {
+
+  return customFetch<Party>(getCreatePartyUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createPartyRequest)
+  }
+);}
+
+
+
+
+export const getCreatePartyMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createParty>>, TError,{data: BodyType<CreatePartyRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createParty>>, TError,{data: BodyType<CreatePartyRequest>}, TContext> => {
+
+const mutationKey = ['createParty'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createParty>>, {data: BodyType<CreatePartyRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createParty(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreatePartyMutationResult = NonNullable<Awaited<ReturnType<typeof createParty>>>
+    export type CreatePartyMutationBody = BodyType<CreatePartyRequest>
+    export type CreatePartyMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Add a new political party
+ */
+export const useCreateParty = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createParty>>, TError,{data: BodyType<CreatePartyRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createParty>>,
+        TError,
+        {data: BodyType<CreatePartyRequest>},
+        TContext
+      > => {
+      return useMutation(getCreatePartyMutationOptions(options));
+    }
 
 export const getListConstituenciesUrl = (params?: ListConstituenciesParams,) => {
   const normalizedParams = new URLSearchParams();
