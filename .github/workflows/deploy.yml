@@ -50,6 +50,7 @@ jobs:
       - name: Build Frontend Application
         run: |
           BASE_PATH="/Election-Insights/" pnpm --filter @workspace/election-results run build
+          cp ./artifacts/election-results/dist/public/index.html ./artifacts/election-results/dist/public/404.html
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
