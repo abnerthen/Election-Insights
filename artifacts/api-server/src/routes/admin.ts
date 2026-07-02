@@ -167,6 +167,28 @@ router.put("/admin/elections/:electionId/constituencies/:constituencyId/results"
       return res.status(400).json({ error: "candidates array is required" });
     }
 
+    // Fetch all parties to verify abbreviation of candidates
+    const allParties = await db.select().from(partiesTable);
+    const indParty = allParties.find(p => p.abbreviation === "IND");
+    const indPartyId = indParty?.id;
+
+    // Check for duplicate parties (excluding Independent)
+    const partyCounts = new Map<number, number>();
+    for (const cand of candidates) {
+      const pId = Number(cand.partyId);
+      if (isNaN(pId)) continue;
+      if (pId !== indPartyId) {
+        partyCounts.set(pId, (partyCounts.get(pId) || 0) + 1);
+        if ((partyCounts.get(pId) || 0) > 1) {
+          const party = allParties.find(p => p.id === pId);
+          const partyAbbr = party ? party.abbreviation : `ID ${pId}`;
+          return res.status(400).json({
+            error: `A party (except Independents) can only stand one candidate per seat. Party "${partyAbbr}" has multiple candidates.`
+          });
+        }
+      }
+    }
+
     // Determine the winner dynamically based on the highest votes
     let winnerIndex = -1;
     let highestVotes = -1;
@@ -183,6 +205,12 @@ router.put("/admin/elections/:electionId/constituencies/:constituencyId/results"
     }
 
     const totalVotes = candidates.reduce((s, c) => s + (Number(c.votes) || 0), 0) + spoilt;
+
+    if (totalVotes > registeredVoters) {
+      return res.status(400).json({
+        error: `Total votes cast (${totalVotes.toLocaleString()}) cannot exceed the number of registered voters (${registeredVoters.toLocaleString()}).`
+      });
+    }
 
     // Upsert each candidate and their votes
     for (let i = 0; i < candidates.length; i++) {
@@ -253,9 +281,9 @@ router.put("/admin/elections/:electionId/constituencies/:constituencyId/results"
       );
 
     return res.json({ ok: true });
-  } catch (err) {
+  } catch (err: any) {
     req.log.error({ err }, "Failed to upsert results");
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(400).json({ error: err?.message || "Failed to upsert results" });
   }
 });
 
