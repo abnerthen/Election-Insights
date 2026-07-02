@@ -17,21 +17,21 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
   }
 
   const { data: election } = useGetElection(currentElectionId, {
-    query: { enabled: !!currentElectionId, queryKey: getGetElectionQueryKey(currentElectionId) }
+    query: { enabled: !!currentElectionId, queryKey: getGetElectionQueryKey(currentElectionId), refetchInterval: 5000 }
   });
-  const { data: parties } = useListParties({ query: { queryKey: getListPartiesQueryKey() } });
+  const { data: parties } = useListParties({ query: { queryKey: getListPartiesQueryKey(), refetchInterval: 5000 } });
   const { data: summary, isLoading: loadingSummary } = useGetElectionSummary(currentElectionId, {
-    query: { enabled: !!currentElectionId, queryKey: getGetElectionSummaryQueryKey(currentElectionId) }
+    query: { enabled: !!currentElectionId, queryKey: getGetElectionSummaryQueryKey(currentElectionId), refetchInterval: 5000 }
   });
   const { data: seatBreakdown, isLoading: loadingSeats } = useGetElectionSeatBreakdown(currentElectionId, {
-    query: { enabled: !!currentElectionId, queryKey: getGetElectionSeatBreakdownQueryKey(currentElectionId) }
+    query: { enabled: !!currentElectionId, queryKey: getGetElectionSeatBreakdownQueryKey(currentElectionId), refetchInterval: 5000 }
   });
   const { data: constituencies, isLoading: loadingConstituencies } = useListConstituencies(
     { electionId: currentElectionId },
-    { query: { enabled: !!currentElectionId, queryKey: getListConstituenciesQueryKey({ electionId: currentElectionId }) } }
+    { query: { enabled: !!currentElectionId, queryKey: getListConstituenciesQueryKey({ electionId: currentElectionId }), refetchInterval: 5000 } }
   );
   const { data: voteShare } = useGetElectionVoteShare(currentElectionId, {
-    query: { enabled: !!currentElectionId, queryKey: getGetElectionVoteShareQueryKey(currentElectionId) }
+    query: { enabled: !!currentElectionId, queryKey: getGetElectionVoteShareQueryKey(currentElectionId), refetchInterval: 5000 }
   });
 
   if (loadingSummary || loadingSeats || loadingConstituencies) {

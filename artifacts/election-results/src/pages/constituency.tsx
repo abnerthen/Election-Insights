@@ -12,7 +12,7 @@ export function ConstituencyPage() {
   const queryParams = electionId ? { electionId } : undefined;
 
   const { data: constituency, isLoading } = useGetConstituency(id, queryParams, {
-    query: { enabled: !!id, queryKey: getGetConstituencyQueryKey(id, queryParams) }
+    query: { enabled: !!id, queryKey: getGetConstituencyQueryKey(id, queryParams), refetchInterval: 5000 }
   });
 
   if (isLoading) {
