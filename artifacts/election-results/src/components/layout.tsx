@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useListElections, getListElectionsQueryKey } from "@workspace/api-client-react";
 import {
   Select,
@@ -33,8 +33,20 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
 }) {
   const { data: elections, isLoading } = useListElections({ query: { queryKey: getListElectionsQueryKey() } });
   
+  const [location, setLocation] = useLocation();
   const [scope, setScope] = useState<"federal" | "state">("federal");
   const [stateFilter, setStateFilter] = useState<string>("Johor");
+
+  const triggerElectionChange = (nextElectionId: number) => {
+    onElectionChange(nextElectionId);
+    
+    // Check if location matches /constituency/:id
+    const match = location.match(/^\/constituency\/(\d+)/);
+    if (match) {
+      const constituencyId = match[1];
+      setLocation(`/constituency/${constituencyId}?electionId=${nextElectionId}`);
+    }
+  };
 
   const activeElection = elections?.find((e) => e.id === currentElectionId);
 
@@ -62,7 +74,7 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
 
     if (filtered.length > 0) {
       const sorted = [...filtered].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      onElectionChange(sorted[0].id);
+      triggerElectionChange(sorted[0].id);
     }
   };
 
@@ -74,7 +86,7 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
     const filtered = elections.filter(e => e.scope === "state" && e.state === newState);
     if (filtered.length > 0) {
       const sorted = [...filtered].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      onElectionChange(sorted[0].id);
+      triggerElectionChange(sorted[0].id);
     }
   };
 
@@ -160,7 +172,7 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
               ) : (
                 <Select
                   value={currentElectionId ? currentElectionId.toString() : ""}
-                  onValueChange={(val) => onElectionChange(parseInt(val))}
+                  onValueChange={(val) => triggerElectionChange(parseInt(val))}
                 >
                   <SelectTrigger className="w-[260px] bg-card border-border text-foreground text-sm font-bold h-9">
                     <SelectValue placeholder="Select Election" />
