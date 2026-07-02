@@ -16,5 +16,6 @@ export * from './getConstituencyParams';
 export * from './healthStatus';
 export * from './listConstituenciesParams';
 export * from './party';
+export * from './partyContestedSeats';
 export * from './partySeatCount';
 export * from './partyVoteShare';

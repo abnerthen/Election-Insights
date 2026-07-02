@@ -5,6 +5,7 @@
  * Election Results API
  * OpenAPI spec version: 0.1.0
  */
+import type { PartyContestedSeats } from './partyContestedSeats';
 
 export interface ElectionSummary {
   electionId: number;
@@ -21,4 +22,5 @@ export interface ElectionSummary {
   /** @nullable */
   leadingPartySeats?: number | null;
   majorityThreshold?: number;
+  partyContestedSeats: PartyContestedSeats[];
 }

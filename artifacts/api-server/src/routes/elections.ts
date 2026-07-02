@@ -118,6 +118,21 @@ router.get("/elections/:id/summary", async (req, res) => {
       }
     }
 
+    // Find number of contested seats per party (distinct constituency count)
+    const contestedRows = await db
+      .select({
+        partyId: partiesTable.id,
+        partyName: partiesTable.name,
+        partyAbbreviation: partiesTable.abbreviation,
+        partyColor: partiesTable.color,
+        seatsContested: sql<number>`count(distinct ${candidatesTable.constituencyId})`.as("seatsContested"),
+      })
+      .from(partiesTable)
+      .innerJoin(candidatesTable, eq(candidatesTable.partyId, partiesTable.id))
+      .where(eq(candidatesTable.electionId, id))
+      .groupBy(partiesTable.id, partiesTable.name, partiesTable.abbreviation, partiesTable.color)
+      .orderBy(sql`count(distinct ${candidatesTable.constituencyId}) desc`);
+
     const majorityThreshold = Math.floor(election.totalSeats / 2) + 1;
 
     return res.json({
@@ -132,6 +147,13 @@ router.get("/elections/:id/summary", async (req, res) => {
       leadingPartyColor,
       leadingPartySeats,
       majorityThreshold,
+      partyContestedSeats: contestedRows.map(r => ({
+        partyId: r.partyId,
+        partyName: r.partyName,
+        partyAbbreviation: r.partyAbbreviation,
+        partyColor: r.partyColor,
+        seatsContested: Number(r.seatsContested),
+      })),
     });
   } catch (err) {
     req.log.error({ err }, "Failed to get election summary");
@@ -201,13 +223,16 @@ router.get("/elections/:id/vote-share", async (req, res) => {
         totalVotes: sql<number>`coalesce(sum(${candidateVotesTable.votes}), 0)`.as("totalVotes"),
       })
       .from(partiesTable)
-      .leftJoin(candidatesTable, eq(candidatesTable.partyId, partiesTable.id))
+      .innerJoin(
+        candidatesTable,
+        and(
+          eq(candidatesTable.partyId, partiesTable.id),
+          eq(candidatesTable.electionId, id)
+        )
+      )
       .leftJoin(
         candidateVotesTable,
-        and(
-          eq(candidateVotesTable.candidateId, candidatesTable.id),
-          eq(candidateVotesTable.electionId, id)
-        )
+        eq(candidateVotesTable.candidateId, candidatesTable.id)
       )
       .groupBy(partiesTable.id, partiesTable.name, partiesTable.abbreviation, partiesTable.color)
       .orderBy(sql`coalesce(sum(${candidateVotesTable.votes}), 0) desc`);

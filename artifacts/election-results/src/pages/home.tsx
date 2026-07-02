@@ -20,7 +20,7 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
   const { data: election } = useGetElection(currentElectionId, {
     query: { enabled: !!currentElectionId, queryKey: getGetElectionQueryKey(currentElectionId), refetchInterval: 5000 }
   });
-  const { data: parties } = useListParties({ query: { queryKey: getListPartiesQueryKey(), refetchInterval: 5000 } });
+
   const { data: summary, isLoading: loadingSummary } = useGetElectionSummary(currentElectionId, {
     query: { enabled: !!currentElectionId, queryKey: getGetElectionSummaryQueryKey(currentElectionId), refetchInterval: 5000 }
   });
@@ -113,10 +113,10 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
             subtitle={`${summary.totalVotesCast.toLocaleString()} of ${summary.totalRegisteredVoters.toLocaleString()} voters`}
           />
 
-          {/* Card 3: Slimmest Majority Seat */}
+          {/* Card 3: Slimmest Majority OR Seats Contested */}
           <div className="bg-card border border-border p-4 rounded-lg flex flex-col relative overflow-hidden">
             <span className="text-muted-foreground text-xs uppercase tracking-widest font-bold">
-              Slimmest Majority
+              {slimmestSeat ? "Slimmest Majority" : "Seats Contested"}
             </span>
             {slimmestSeat ? (
               <div className="flex flex-col gap-2 mt-1 flex-1 justify-between">
@@ -155,7 +155,34 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
                 )}
               </div>
             ) : (
-              <div className="text-sm text-muted-foreground mt-4">No results declared yet.</div>
+              <div className="flex flex-col gap-2 mt-2 flex-1 justify-between">
+                {summary && summary.partyContestedSeats && summary.partyContestedSeats.length > 0 ? (
+                  <div className="flex flex-col gap-1.5 overflow-y-auto max-h-[140px] pr-1">
+                    {summary.partyContestedSeats
+                      .sort((a, b) => b.seatsContested - a.seatsContested)
+                      .map((p) => {
+                        const pct = summary.seatsTotal > 0
+                          ? (p.seatsContested / summary.seatsTotal) * 100
+                          : 0;
+                        return (
+                          <div key={p.partyId} className="flex items-center gap-2 text-xs">
+                            <div className="w-8 font-bold text-muted-foreground truncate" title={p.partyName}>
+                              {p.partyAbbreviation}
+                            </div>
+                            <div className="flex-1 bg-secondary/40 h-3 rounded overflow-hidden relative" style={{ isolation: "isolate" }}>
+                              <div className="h-full rounded" style={{ width: `${pct}%`, backgroundColor: p.partyColor }} />
+                            </div>
+                            <div className="w-16 text-right font-semibold text-foreground">
+                              {p.seatsContested} / {summary.seatsTotal}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">No candidate nominations found.</div>
+                )}
+              </div>
             )}
           </div>
 
@@ -346,18 +373,20 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
         </div>
 
         <div>
-          {parties && (
+          {voteShare && (
             <>
               <h3 className="font-serif text-xl mb-6 uppercase tracking-widest border-b border-border pb-2">
                 Parties
               </h3>
               <div className="flex flex-wrap gap-2">
-                {parties.map(party => (
-                  <div key={party.id} className="flex items-center gap-2 bg-secondary/50 px-3 py-1.5 rounded-full border border-border">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: party.color }} />
-                    <span className="text-sm font-bold uppercase tracking-wider">{party.abbreviation}</span>
-                  </div>
-                ))}
+                {[...voteShare]
+                  .sort((a, b) => a.partyAbbreviation.localeCompare(b.partyAbbreviation))
+                  .map(party => (
+                    <div key={party.partyId} className="flex items-center gap-2 bg-secondary/50 px-3 py-1.5 rounded-full border border-border">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: party.partyColor }} />
+                      <span className="text-sm font-bold uppercase tracking-wider">{party.partyAbbreviation}</span>
+                    </div>
+                  ))}
               </div>
             </>
           )}

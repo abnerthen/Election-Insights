@@ -28,6 +28,14 @@ export interface Election {
   state?: string | null;
 }
 
+export interface PartyContestedSeats {
+  partyId: number;
+  partyName: string;
+  partyAbbreviation: string;
+  partyColor: string;
+  seatsContested: number;
+}
+
 export interface ElectionSummary {
   electionId: number;
   electionName: string;
@@ -43,6 +51,7 @@ export interface ElectionSummary {
   /** @nullable */
   leadingPartySeats?: number | null;
   majorityThreshold?: number;
+  partyContestedSeats: PartyContestedSeats[];
 }
 
 export interface PartySeatCount {

@@ -253,7 +253,7 @@ components:
 
     ElectionSummary:
       type: object
-      required: [electionId, electionName, totalRegisteredVoters, totalVotesCast, turnoutPercent, seatsTotal, seatsDeclared, leadingParty]
+      required: [electionId, electionName, totalRegisteredVoters, totalVotesCast, turnoutPercent, seatsTotal, seatsDeclared, leadingParty, partyContestedSeats]
       properties:
         electionId:
           type: integer
@@ -276,6 +276,25 @@ components:
         leadingPartySeats:
           type: ["integer", "null"]
         majorityThreshold:
+          type: integer
+        partyContestedSeats:
+          type: array
+          items:
+            $ref: "#/components/schemas/PartyContestedSeats"
+
+    PartyContestedSeats:
+      type: object
+      required: [partyId, partyName, partyColor, partyAbbreviation, seatsContested]
+      properties:
+        partyId:
+          type: integer
+        partyName:
+          type: string
+        partyAbbreviation:
+          type: string
+        partyColor:
+          type: string
+        seatsContested:
           type: integer
 
     PartySeatCount:

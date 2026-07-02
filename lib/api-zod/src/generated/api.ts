@@ -68,7 +68,14 @@ export const GetElectionSummaryResponse = zod.object({
   "leadingParty": zod.string().nullable(),
   "leadingPartyColor": zod.string().nullish(),
   "leadingPartySeats": zod.number().nullish(),
-  "majorityThreshold": zod.number().optional()
+  "majorityThreshold": zod.number().optional(),
+  "partyContestedSeats": zod.array(zod.object({
+  "partyId": zod.number(),
+  "partyName": zod.string(),
+  "partyAbbreviation": zod.string(),
+  "partyColor": zod.string(),
+  "seatsContested": zod.number()
+}))
 })
 
 
