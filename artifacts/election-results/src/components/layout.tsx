@@ -78,14 +78,8 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
     }
   };
 
-  // Filter election select menu matching scope and state
-  const displayedElections = elections
-    ? elections.filter(e => 
-        scope === "federal" 
-          ? e.scope === "federal" 
-          : e.scope === "state" && e.state === stateFilter
-      )
-    : [];
+  // Show all elections in the dropdown
+  const displayedElections = elections || [];
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans antialiased selection:bg-primary selection:text-primary-foreground">
@@ -109,7 +103,7 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
       <div className="bg-secondary/40 border-b border-border/60 py-3 shadow-md">
         <div className="container mx-auto px-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
           
-          {/* Level Toggle: Federal vs State */}
+          {/* Level Toggle: Federal vs State
           <div className="flex items-center gap-3">
             <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Level:</span>
             <ToggleGroup
@@ -136,6 +130,7 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
               </ToggleGroupItem>
             </ToggleGroup>
           </div>
+          */}
 
           {/* State Dropdown + Election Selection */}
           <div className="flex flex-wrap items-center gap-4">
