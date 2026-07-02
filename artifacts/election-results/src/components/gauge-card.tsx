@@ -21,9 +21,9 @@ export function GaugeCard({
 
   // Semi-circle gauge geometry
   const W = 160;
-  const H = 90;
+  const H = 72;
   const cx = W / 2;
-  const cy = H - 5;
+  const cy = H - 4;
   const r = 62;
   const strokeW = 12;
 
@@ -75,7 +75,7 @@ export function GaugeCard({
         </svg>
       </div>
 
-      <div className="text-center mt-3">
+      <div className="text-center -mt-2 relative z-10">
         <div className="text-3xl font-bold font-serif tracking-tight text-foreground">
           {displayValue}
         </div>
