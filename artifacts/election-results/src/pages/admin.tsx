@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { useCreateParty } from "@workspace/api-client-react";
+import { useCreateParty, getBaseUrl } from "@workspace/api-client-react";
 import { Textarea } from "@/components/ui/textarea";
 
 const MALAYSIAN_STATES = [
@@ -27,10 +27,17 @@ const MALAYSIAN_STATES = [
   "Sarawak"
 ];
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+function getApiUrl(path: string): string {
+  const apiBase = getBaseUrl();
+  if (apiBase) {
+    return `${apiBase}/api${path}`;
+  }
+  const clientBase = import.meta.env.BASE_URL.replace(/\/$/, "");
+  return `${clientBase}/api${path}`;
+}
 
 async function adminFetch(path: string, adminKey: string, opts: RequestInit = {}) {
-  const res = await fetch(`${BASE}/api${path}`, {
+  const res = await fetch(getApiUrl(path), {
     ...opts,
     headers: {
       "Content-Type": "application/json",
@@ -58,13 +65,13 @@ function PasswordGate({ onAuth }: { onAuth: (key: string) => void }) {
     try {
       await adminFetch("/admin/elections", key, { method: "GET" }).catch(async () => {
         // GET isn't defined; use a harmless check: try a real endpoint that needs auth
-        const r = await fetch(`${BASE}/api/healthz`);
+        const r = await fetch(getApiUrl("/healthz"));
         await r.json();
       });
       // Verify key by calling an admin endpoint
-      await fetch(`${BASE}/api/elections`, { headers: { "X-Admin-Key": key } });
+      await fetch(getApiUrl("/elections"), { headers: { "X-Admin-Key": key } });
       // Try the actual auth check
-      const check = await fetch(`${BASE}/api/admin/elections`, {
+      const check = await fetch(getApiUrl("/admin/elections"), {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Admin-Key": key },
         body: JSON.stringify({}),
