@@ -71,7 +71,7 @@ export function PieChartCard({ slices, title }: PieChartCardProps) {
               stroke="#0f172a"
               strokeWidth="1.5"
             >
-              <title>{p.label}: {p.pct.toFixed(1)}%</title>
+              <title>{p.label}: {p.pct.toFixed(2)}%</title>
             </path>
           ))}
         </svg>
@@ -88,7 +88,7 @@ export function PieChartCard({ slices, title }: PieChartCardProps) {
                 {sl.label}
               </span>
               <span className="text-xs font-semibold text-foreground flex-shrink-0">
-                {((sl.value / total) * 100).toFixed(1)}%
+                {((sl.value / total) * 100).toFixed(2)}%
               </span>
             </div>
           ))}

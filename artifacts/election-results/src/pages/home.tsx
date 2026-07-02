@@ -224,7 +224,7 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
                             }}
                           />
                           <span className="absolute inset-0 flex items-center px-2 text-xs font-semibold text-white drop-shadow">
-                            {party.voteSharePercent.toFixed(1)}%
+                            {party.voteSharePercent.toFixed(2)}%
                           </span>
                         </div>
                         <div className="w-24 text-right text-xs text-muted-foreground flex-shrink-0">
@@ -280,7 +280,7 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
                           style={{ width: `${party.voteSharePercent}%`, backgroundColor: party.partyColor }}
                         />
                         <div className="absolute inset-0 flex items-center px-3 text-xs font-bold text-white drop-shadow-md">
-                          {party.voteSharePercent.toFixed(1)}%
+                          {party.voteSharePercent.toFixed(2)}%
                         </div>
                       </div>
                       <div className="w-24 text-right text-sm text-muted-foreground">

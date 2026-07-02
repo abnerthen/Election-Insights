@@ -405,7 +405,7 @@ function EntryDialog({
             {/* Turnout preview */}
             {registeredVoters > 0 && totalVotesCast > 0 && (
               <div className="bg-secondary/50 rounded-lg px-4 py-2 text-sm text-muted-foreground flex gap-6">
-                <span>Turnout: <strong className="text-foreground">{((totalVotesCast / registeredVoters) * 100).toFixed(1)}%</strong></span>
+                <span>Turnout: <strong className="text-foreground">{((totalVotesCast / registeredVoters) * 100).toFixed(2)}%</strong></span>
                 <span>Valid: <strong className="text-foreground">{totalValidVotes.toLocaleString()}</strong></span>
                 <span>Spoilt: <strong className="text-foreground">{spoiltVotes.toLocaleString()}</strong></span>
               </div>

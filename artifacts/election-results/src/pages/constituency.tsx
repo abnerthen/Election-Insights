@@ -116,10 +116,10 @@ export function ConstituencyPage() {
                     <div className="text-right">
                       <div className="font-serif font-bold text-xl">{candidate.votes.toLocaleString()}</div>
                       <div className="text-sm text-muted-foreground">
-                        {candidate.voteSharePercent.toFixed(1)}%
+                        {candidate.voteSharePercent.toFixed(2)}%
                         {candidate.voteShareChangePercent != null && (
                           <span className={`ml-2 text-xs font-bold ${candidate.voteShareChangePercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {candidate.voteShareChangePercent >= 0 ? '+' : ''}{candidate.voteShareChangePercent.toFixed(1)}%
+                            {candidate.voteShareChangePercent >= 0 ? '+' : ''}{candidate.voteShareChangePercent.toFixed(2)}%
                           </span>
                         )}
                       </div>
@@ -151,7 +151,7 @@ export function ConstituencyPage() {
                   <span className="text-muted-foreground text-sm font-normal">/</span>
                   <span className="text-base font-semibold text-muted-foreground">{constituency.registeredVoters.toLocaleString()}</span>
                   <span className="text-sm font-sans font-normal text-muted-foreground ml-1">
-                    ({constituency.turnoutPercent.toFixed(1)}%)
+                    ({constituency.turnoutPercent.toFixed(2)}%)
                   </span>
                 </div>
               </div>

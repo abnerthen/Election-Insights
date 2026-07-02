@@ -38,7 +38,7 @@ export function GaugeCard({
   const filled = arcLen * pct;
   const gap = arcLen - filled;
 
-  const displayValue = formatValue ? formatValue(value) : `${value.toFixed(1)}${unit}`;
+  const displayValue = formatValue ? formatValue(value) : `${value.toFixed(2)}${unit}`;
 
   return (
     <div className="bg-card border border-border p-4 rounded-lg flex flex-col items-center">

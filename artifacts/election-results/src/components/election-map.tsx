@@ -266,7 +266,7 @@ export function ElectionMap({ constituencies, scope, stateName }: ElectionMapPro
                   </div>
                   <div className="text-slate-200 font-semibold truncate">{c.winningCandidateName}</div>
                   <div className="text-[10px] text-slate-500">
-                    Turnout: {Number(c.turnoutPercent).toFixed(1)}%
+                    Turnout: {Number(c.turnoutPercent).toFixed(2)}%
                   </div>
                 </div>
               ) : (
