@@ -24,7 +24,7 @@ const PARTIES = [
 const JOHOR_DUN_SEATS: { name: string; code: number; region: string; lng: number; lat: number, gridX?: number, gridY?: number }[] = [
   { code: 1, name: "Buloh Kasap", region: "Segamat", lng: 102.78, lat: 2.53, gridX: 7, gridY: 4 },
   { code: 2, name: "Jementah", region: "Segamat", lng: 102.98, lat: 2.62, gridX: 7, gridY: 5 },
-  { code: 3, name: "Pemanis", region: "Segamat", lng: 103.05, lat: 2.52, gridX: 8, gridY: 5 },
+  { code: 3, name: "Pemanis", region: "Sekijang", lng: 103.05, lat: 2.52, gridX: 8, gridY: 5 },
   { code: 4, name: "Kemelah", region: "Sekijang", lng: 102.98, lat: 2.37, gridX: 8, gridY: 6 },
   { code: 5, name: "Tenang", region: "Labis", lng: 102.98, lat: 2.37, gridX: 9, gridY: 5 },
   { code: 6, name: "Bekok", region: "Labis", lng: 103.12, lat: 2.43, gridX: 9, gridY: 6 },

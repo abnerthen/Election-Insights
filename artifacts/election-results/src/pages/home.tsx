@@ -9,8 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SeatDiagram } from "@/components/seat-diagram";
 import { GaugeCard } from "@/components/gauge-card";
 import { PieChartCard } from "@/components/pie-chart-card";
-import { ConstituencyMap } from "@/components/constituency-map";
-import { ElectionMap } from "@/components/election-map";
+import { ConstituencyMap, ConstituencyRowView } from "@/components/constituency-map";
 
 export function HomePage({ currentElectionId }: { currentElectionId: number | null }) {
   if (!currentElectionId) {
@@ -157,11 +156,11 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
             <TabsTrigger value="seats" className="font-bold tracking-wider uppercase text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               Hemicycle
             </TabsTrigger>
-            <TabsTrigger value="map" className="font-bold tracking-wider uppercase text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              Map View
-            </TabsTrigger>
             <TabsTrigger value="grid" className="font-bold tracking-wider uppercase text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               Grid View
+            </TabsTrigger>
+            <TabsTrigger value="rows" className="font-bold tracking-wider uppercase text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Row View
             </TabsTrigger>
           </TabsList>
         </div>
@@ -239,30 +238,21 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
           </div>
         </TabsContent>
 
-        <TabsContent value="map" className="mt-0">
-          <div className="bg-card border border-border rounded-xl p-6 shadow-2xl">
-            <h2 className="text-center font-serif text-2xl mb-2 uppercase tracking-widest text-muted-foreground">
-              {election?.scope === "federal" ? "Malaysia National Map" : `${election?.state || "State"} Map`}
-            </h2>
-            <p className="text-center text-xs text-muted-foreground mb-6 tracking-widest uppercase">
-              Click any constituency to view full results
-            </p>
-            {constituencies && (
-              <ElectionMap
-                constituencies={constituencies}
-                scope={election?.scope as "federal" | "state"}
-                stateName={election?.state ?? null}
-              />
-            )}
-          </div>
-        </TabsContent>
-
         <TabsContent value="grid" className="mt-0">
           <div className="bg-card border border-border rounded-xl p-8 shadow-2xl">
             <h2 className="text-center font-serif text-2xl mb-8 uppercase tracking-widest text-muted-foreground">
               Constituency Grid
             </h2>
             {constituencies && <ConstituencyMap constituencies={constituencies} />}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="rows" className="mt-0">
+          <div className="bg-card border border-border rounded-xl p-8 shadow-2xl">
+            <h2 className="text-center font-serif text-2xl mb-8 uppercase tracking-widest text-muted-foreground">
+              Regional Seat Breakdown
+            </h2>
+            {constituencies && <ConstituencyRowView constituencies={constituencies} />}
           </div>
         </TabsContent>
       </Tabs>
