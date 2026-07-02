@@ -139,18 +139,19 @@ export function ConstituencyPage() {
               </div>
 
               <div>
+                <div className="text-sm text-muted-foreground uppercase tracking-widest font-bold mb-1">Spoilt Votes</div>
+                <div className="text-2xl font-serif font-bold text-foreground">
+                  {constituency.spoiltVotes?.toLocaleString() ?? 0}
+                  <span className="text-sm font-sans font-normal text-muted-foreground ml-2">
+                    ({(constituency.votesCast > 0 ? ((constituency.spoiltVotes ?? 0) / constituency.votesCast) * 100 : 0).toFixed(2)}% of turnout)
+                  </span>
+                </div>
+              </div>
+
+              <div>
                 <div className="text-sm text-muted-foreground uppercase tracking-widest font-bold mb-1">Registered Voters</div>
                 <div className="text-xl font-serif font-bold text-muted-foreground">{constituency.registeredVoters.toLocaleString()}</div>
               </div>
-
-              {constituency.latitude && constituency.longitude && (
-                <div className="pt-6 mt-6 border-t border-border">
-                  <div className="text-sm text-muted-foreground uppercase tracking-widest font-bold mb-2">Location</div>
-                  <div className="bg-secondary rounded p-3 text-center text-xs font-mono text-muted-foreground">
-                    Lat: {constituency.latitude.toFixed(4)}, Long: {constituency.longitude.toFixed(4)}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
