@@ -148,6 +148,7 @@ export const ListConstituenciesQueryParams = zod.object({
 
 export const ListConstituenciesResponseItem = zod.object({
   "id": zod.number(),
+  "electionId": zod.number(),
   "name": zod.string(),
   "region": zod.string(),
   "code": zod.string(),
@@ -180,6 +181,10 @@ export const GetConstituencyParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const GetConstituencyQueryParams = zod.object({
+  "electionId": zod.coerce.number().optional()
+})
+
 export const GetConstituencyResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
@@ -205,6 +210,7 @@ export const GetConstituencyResponse = zod.object({
   "partyColor": zod.string(),
   "votes": zod.number(),
   "voteSharePercent": zod.number(),
+  "voteShareChangePercent": zod.number().nullish(),
   "isWinner": zod.boolean()
 }))
 })

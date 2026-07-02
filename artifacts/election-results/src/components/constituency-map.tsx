@@ -48,11 +48,11 @@ export function ConstituencyMap({ constituencies }: ConstituencyMapProps) {
         </div>
       </div>
 
-      <div 
+      <div
         className="grid gap-[2px] mx-auto p-4 bg-card border border-border rounded-lg"
-        style={{ 
+        style={{
           gridTemplateColumns: hasGridCoords ? "repeat(15, minmax(0, 1fr))" : `repeat(${cols}, minmax(0, 1fr))`,
-          maxWidth: "800px" 
+          maxWidth: "800px"
         }}
       >
         {hasGridCoords ? (
@@ -61,13 +61,13 @@ export function ConstituencyMap({ constituencies }: ConstituencyMapProps) {
               const c = cell.constituency;
               const isDeclared = c.status === "declared";
               const bgColor = isDeclared && c.winningPartyColor ? c.winningPartyColor : "#1e293b";
-              
+
               return (
-                <div 
+                <div
                   key={c.id}
                   className="aspect-square relative group cursor-pointer transition-transform hover:z-10 hover:scale-125 rounded-sm"
                   style={{ backgroundColor: bgColor }}
-                  onClick={() => setLocation(`/constituency/${c.id}`)}
+                  onClick={() => setLocation(`/constituency/${c.id}?electionId=${c.electionId}`)}
                   data-testid={`map-cell-${c.id}`}
                 >
                   {/* Tooltip */}
@@ -77,7 +77,7 @@ export function ConstituencyMap({ constituencies }: ConstituencyMapProps) {
                     </div>
                     {isDeclared ? (
                       <>
-                        <div className="text-xs text-slate-300">{c.winningPartyName} hold/gain</div>
+                        <div className="text-xs text-slate-300">{c.winningPartyName} win</div>
                         <div className="text-xs font-semibold mt-1" style={{ color: c.winningPartyColor || 'white' }}>
                           {c.winningCandidateName}
                         </div>
@@ -96,8 +96,8 @@ export function ConstituencyMap({ constituencies }: ConstituencyMapProps) {
               );
             } else {
               return (
-                <div 
-                  key={`empty-${cell.x}-${cell.y}`} 
+                <div
+                  key={`empty-${cell.x}-${cell.y}`}
                   className="aspect-square border border-border/5 bg-secondary/5 rounded-sm pointer-events-none opacity-20"
                 />
               );
@@ -107,13 +107,13 @@ export function ConstituencyMap({ constituencies }: ConstituencyMapProps) {
           sorted.map((c) => {
             const isDeclared = c.status === "declared";
             const bgColor = isDeclared && c.winningPartyColor ? c.winningPartyColor : "#1e293b";
-            
+
             return (
-              <div 
+              <div
                 key={c.id}
                 className="aspect-square relative group cursor-pointer transition-transform hover:z-10 hover:scale-125 rounded-sm"
                 style={{ backgroundColor: bgColor }}
-                onClick={() => setLocation(`/constituency/${c.id}`)}
+                onClick={() => setLocation(`/constituency/${c.id}?electionId=${c.electionId}`)}
                 data-testid={`map-cell-${c.id}`}
               >
                 {/* Tooltip */}
@@ -123,7 +123,7 @@ export function ConstituencyMap({ constituencies }: ConstituencyMapProps) {
                   </div>
                   {isDeclared ? (
                     <>
-                      <div className="text-xs text-slate-300">{c.winningPartyName} hold/gain</div>
+                      <div className="text-xs text-slate-300">{c.winningPartyName} win</div>
                       <div className="text-xs font-semibold mt-1" style={{ color: c.winningPartyColor || 'white' }}>
                         {c.winningCandidateName}
                       </div>
@@ -143,7 +143,7 @@ export function ConstituencyMap({ constituencies }: ConstituencyMapProps) {
           })
         )}
       </div>
-      
+
       {/* Legend */}
       <div className="mt-8 flex flex-wrap gap-4 justify-center">
         <div className="flex items-center gap-2">
@@ -198,26 +198,26 @@ export function ConstituencyRowView({ constituencies }: ConstituencyMapProps) {
               <div className="w-full sm:w-36 flex-shrink-0 text-xs font-bold uppercase tracking-wider text-muted-foreground truncate">
                 {regionName}
               </div>
-              
+
               {/* Constituencies blocks */}
               <div className="flex flex-wrap gap-1.5">
                 {list.map(c => {
                   const isDeclared = c.status === "declared";
                   const bgColor = isDeclared && c.winningPartyColor ? c.winningPartyColor : "#1e293b";
-                  
+
                   return (
                     <div
                       key={c.id}
                       className="w-12 h-12 relative group cursor-pointer transition-all hover:scale-110 rounded border border-border/20 flex flex-col justify-between p-1.5 select-none"
                       style={{ backgroundColor: bgColor }}
-                      onClick={() => setLocation(`/constituency/${c.id}`)}
+                      onClick={() => setLocation(`/constituency/${c.id}?electionId=${c.electionId}`)}
                       data-testid={`map-cell-${c.id}`}
                     >
                       {/* Small Seat Code Display inside block */}
                       <div className="text-[10px] font-bold text-white leading-none">
                         {c.code || ""}
                       </div>
-                      
+
                       {/* Tiny text indicating winning party abbreviated */}
                       <div className="text-[10px] font-extrabold text-white text-right self-end leading-none">
                         {isDeclared ? c.winningPartyAbbreviation : ""}
@@ -230,7 +230,7 @@ export function ConstituencyRowView({ constituencies }: ConstituencyMapProps) {
                         </div>
                         {isDeclared ? (
                           <>
-                            <div className="text-xs text-slate-300">{c.winningPartyName} hold/gain</div>
+                            <div className="text-xs text-slate-300">{c.winningPartyName} win</div>
                             <div className="text-xs font-semibold mt-1" style={{ color: c.winningPartyColor || 'white' }}>
                               {c.winningCandidateName}
                             </div>

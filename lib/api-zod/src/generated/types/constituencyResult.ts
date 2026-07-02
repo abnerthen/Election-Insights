@@ -8,6 +8,7 @@
 
 export interface ConstituencyResult {
   id: number;
+  electionId: number;
   name: string;
   region: string;
   code: string;

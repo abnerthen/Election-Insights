@@ -193,6 +193,11 @@ paths:
           required: true
           schema:
             type: integer
+        - name: electionId
+          in: query
+          required: false
+          schema:
+            type: integer
       responses:
         "200":
           description: Constituency with detailed candidate results
@@ -322,9 +327,11 @@ components:
 
     ConstituencyResult:
       type: object
-      required: [id, name, region, code, registeredVoters, votesCast, spoiltVotes, turnoutPercent, status, scope, state]
+      required: [id, name, region, code, registeredVoters, votesCast, spoiltVotes, turnoutPercent, status, scope, state, electionId]
       properties:
         id:
+          type: integer
+        electionId:
           type: integer
         name:
           type: string
@@ -429,5 +436,7 @@ components:
           type: integer
         voteSharePercent:
           type: number
+        voteShareChangePercent:
+          type: ["number", "null"]
         isWinner:
           type: boolean

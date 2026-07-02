@@ -80,6 +80,7 @@ router.get("/constituencies", async (req, res) => {
         // Find second place to compute margin — simplified: just return winner votes
         return {
           id: r.id,
+          electionId: r.electionId,
           name: r.name,
           region: r.region,
           code: r.code ?? "",
@@ -121,8 +122,10 @@ router.get("/constituencies/:id", async (req, res) => {
       .where(eq(constituenciesTable.id, id));
     if (!constituency) return res.status(404).json({ error: "Not found" });
 
-    // Get latest result for this constituency (most recent by election date)
-    const [result] = await db
+    const electionIdParam = req.query.electionId ? parseInt(req.query.electionId as string, 10) : null;
+
+    // Get result for this constituency
+    const resultQuery = db
       .select({
         electionId: constituencyResultsTable.electionId,
         constituencyId: constituencyResultsTable.constituencyId,
@@ -130,14 +133,78 @@ router.get("/constituencies/:id", async (req, res) => {
         votesCast: constituencyResultsTable.votesCast,
         spoiltVotes: constituencyResultsTable.spoiltVotes,
         status: constituencyResultsTable.status,
+        electionDate: electionsTable.date,
+        electionScope: electionsTable.scope,
+      })
+      .from(constituencyResultsTable)
+      .innerJoin(electionsTable, eq(electionsTable.id, constituencyResultsTable.electionId));
+
+    let result;
+    if (electionIdParam && !isNaN(electionIdParam)) {
+      [result] = await resultQuery
+        .where(
+          and(
+            eq(constituencyResultsTable.constituencyId, id),
+            eq(constituencyResultsTable.electionId, electionIdParam)
+          )
+        )
+        .limit(1);
+    } else {
+      [result] = await resultQuery
+        .where(eq(constituencyResultsTable.constituencyId, id))
+        .orderBy(sql`${electionsTable.date} desc`)
+        .limit(1);
+    }
+
+    if (!result) return res.status(404).json({ error: "No results found" });
+
+    // Find previous election results for this constituency (same scope, older date)
+    const [prevResult] = await db
+      .select({
+        electionId: constituencyResultsTable.electionId,
       })
       .from(constituencyResultsTable)
       .innerJoin(electionsTable, eq(electionsTable.id, constituencyResultsTable.electionId))
-      .where(eq(constituencyResultsTable.constituencyId, id))
+      .where(
+        and(
+          eq(constituencyResultsTable.constituencyId, id),
+          eq(electionsTable.scope, result.electionScope),
+          sql`${electionsTable.date} < ${result.electionDate}`
+        )
+      )
       .orderBy(sql`${electionsTable.date} desc`)
       .limit(1);
 
-    if (!result) return res.status(404).json({ error: "No results found" });
+    const prevPartyVotes: Record<string, number> = {};
+    let prevTotalVotes = 0;
+
+    if (prevResult) {
+      const prevCandidates = await db
+        .select({
+          partyAbbreviation: partiesTable.abbreviation,
+          votes: candidateVotesTable.votes,
+        })
+        .from(candidatesTable)
+        .innerJoin(partiesTable, eq(candidatesTable.partyId, partiesTable.id))
+        .innerJoin(
+          candidateVotesTable,
+          and(
+            eq(candidateVotesTable.candidateId, candidatesTable.id),
+            eq(candidateVotesTable.electionId, prevResult.electionId)
+          )
+        )
+        .where(
+          and(
+            eq(candidatesTable.constituencyId, id),
+            eq(candidatesTable.electionId, prevResult.electionId)
+          )
+        );
+
+      prevTotalVotes = prevCandidates.reduce((sum, c) => sum + c.votes, 0);
+      prevCandidates.forEach((c) => {
+        prevPartyVotes[c.partyAbbreviation] = c.votes;
+      });
+    }
 
     const turnoutPercent =
       result.registeredVoters > 0
@@ -191,18 +258,28 @@ router.get("/constituencies/:id", async (req, res) => {
       longitude: constituency.longitude ?? null,
       gridX: constituency.gridX ?? null,
       gridY: constituency.gridY ?? null,
-      candidates: candidateRows.map((c) => ({
-        id: c.candidateId,
-        name: c.candidateName,
-        partyId: c.partyId,
-        partyName: c.partyName,
-        partyAbbreviation: c.partyAbbreviation,
-        partyColor: c.partyColor,
-        votes: c.votes,
-        voteSharePercent:
-          totalVotes > 0 ? Math.round((c.votes / totalVotes) * 10000) / 100 : 0,
-        isWinner: c.isWinner === 1,
-      })),
+      candidates: candidateRows.map((c) => {
+        const share = totalVotes > 0 ? Math.round((c.votes / totalVotes) * 10000) / 100 : 0;
+        
+        let change: number | null = null;
+        if (prevTotalVotes > 0 && prevPartyVotes[c.partyAbbreviation] !== undefined) {
+          const prevShare = (prevPartyVotes[c.partyAbbreviation] / prevTotalVotes) * 100;
+          change = Math.round((share - prevShare) * 100) / 100;
+        }
+
+        return {
+          id: c.candidateId,
+          name: c.candidateName,
+          partyId: c.partyId,
+          partyName: c.partyName,
+          partyAbbreviation: c.partyAbbreviation,
+          partyColor: c.partyColor,
+          votes: c.votes,
+          voteSharePercent: share,
+          voteShareChangePercent: change,
+          isWinner: c.isWinner === 1,
+        };
+      }),
     });
   } catch (err) {
     req.log.error({ err }, "Failed to get constituency");

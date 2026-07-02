@@ -6,8 +6,13 @@ export function ConstituencyPage() {
   const params = useParams();
   const id = parseInt(params.id || "0");
 
-  const { data: constituency, isLoading } = useGetConstituency(id, {
-    query: { enabled: !!id, queryKey: getGetConstituencyQueryKey(id) }
+  const searchParams = new URLSearchParams(window.location.search);
+  const electionIdVal = searchParams.get("electionId");
+  const electionId = electionIdVal ? parseInt(electionIdVal, 10) : undefined;
+  const queryParams = electionId ? { electionId } : undefined;
+
+  const { data: constituency, isLoading } = useGetConstituency(id, queryParams, {
+    query: { enabled: !!id, queryKey: getGetConstituencyQueryKey(id, queryParams) }
   });
 
   if (isLoading) {
@@ -103,7 +108,14 @@ export function ConstituencyPage() {
                     </div>
                     <div className="text-right">
                       <div className="font-serif font-bold text-xl">{candidate.votes.toLocaleString()}</div>
-                      <div className="text-sm text-muted-foreground">{candidate.voteSharePercent.toFixed(1)}%</div>
+                      <div className="text-sm text-muted-foreground">
+                        {candidate.voteSharePercent.toFixed(1)}%
+                        {candidate.voteShareChangePercent != null && (
+                          <span className={`ml-2 text-xs font-bold ${candidate.voteShareChangePercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {candidate.voteShareChangePercent >= 0 ? '+' : ''}{candidate.voteShareChangePercent.toFixed(1)}%
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 

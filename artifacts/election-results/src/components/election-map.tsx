@@ -122,6 +122,7 @@ export function ElectionMap({ constituencies, scope, stateName }: ElectionMapPro
           type: "Feature",
           properties: {
             id: c.id,
+            electionId: c.electionId,
             name: c.name,
             code: c.code,
             region: c.region,
@@ -195,7 +196,7 @@ export function ElectionMap({ constituencies, scope, stateName }: ElectionMapPro
       map.on("click", "constituency-fills", (e) => {
         const feature = e.features?.[0];
         if (feature) {
-          setLocation(`/constituency/${feature.properties.id}`);
+          setLocation(`/constituency/${feature.properties.id}?electionId=${feature.properties.electionId}`);
         }
       });
 

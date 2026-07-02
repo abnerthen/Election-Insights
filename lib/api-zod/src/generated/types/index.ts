@@ -12,6 +12,7 @@ export * from './constituencyResult';
 export * from './createPartyRequest';
 export * from './election';
 export * from './electionSummary';
+export * from './getConstituencyParams';
 export * from './healthStatus';
 export * from './listConstituenciesParams';
 export * from './party';

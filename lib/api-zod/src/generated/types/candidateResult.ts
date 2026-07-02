@@ -15,5 +15,7 @@ export interface CandidateResult {
   partyColor: string;
   votes: number;
   voteSharePercent: number;
+  /** @nullable */
+  voteShareChangePercent?: number | null;
   isWinner: boolean;
 }

@@ -25,6 +25,7 @@ import type {
   CreatePartyRequest,
   Election,
   ElectionSummary,
+  GetConstituencyParams,
   HealthStatus,
   ListConstituenciesParams,
   Party,
@@ -753,20 +754,29 @@ export function useListConstituencies<TData = Awaited<ReturnType<typeof listCons
 
 
 
-export const getGetConstituencyUrl = (id: number,) => {
+export const getGetConstituencyUrl = (id: number,
+    params?: GetConstituencyParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/constituencies/${id}`
+  return stringifiedParams.length > 0 ? `/api/constituencies/${id}?${stringifiedParams}` : `/api/constituencies/${id}`
 }
 
 /**
  * @summary Get full result detail for a constituency
  */
-export const getConstituency = async (id: number, options?: RequestInit): Promise<ConstituencyDetail> => {
+export const getConstituency = async (id: number,
+    params?: GetConstituencyParams, options?: RequestInit): Promise<ConstituencyDetail> => {
 
-  return customFetch<ConstituencyDetail>(getGetConstituencyUrl(id),
+  return customFetch<ConstituencyDetail>(getGetConstituencyUrl(id,params),
   {
     ...options,
     method: 'GET'
@@ -779,23 +789,25 @@ export const getConstituency = async (id: number, options?: RequestInit): Promis
 
 
 
-export const getGetConstituencyQueryKey = (id: number,) => {
+export const getGetConstituencyQueryKey = (id: number,
+    params?: GetConstituencyParams,) => {
     return [
-    `/api/constituencies/${id}`
+    `/api/constituencies/${id}`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetConstituencyQueryOptions = <TData = Awaited<ReturnType<typeof getConstituency>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getConstituency>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetConstituencyQueryOptions = <TData = Awaited<ReturnType<typeof getConstituency>>, TError = ErrorType<void>>(id: number,
+    params?: GetConstituencyParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getConstituency>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetConstituencyQueryKey(id);
+  const queryKey =  queryOptions?.queryKey ?? getGetConstituencyQueryKey(id,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getConstituency>>> = ({ signal }) => getConstituency(id, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getConstituency>>> = ({ signal }) => getConstituency(id,params, { signal, ...requestOptions });
 
 
 
@@ -813,11 +825,12 @@ export type GetConstituencyQueryError = ErrorType<void>
  */
 
 export function useGetConstituency<TData = Awaited<ReturnType<typeof getConstituency>>, TError = ErrorType<void>>(
- id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getConstituency>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ id: number,
+    params?: GetConstituencyParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getConstituency>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetConstituencyQueryOptions(id,options)
+  const queryOptions = getGetConstituencyQueryOptions(id,params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
