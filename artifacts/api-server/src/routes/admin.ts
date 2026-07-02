@@ -172,11 +172,15 @@ router.put("/admin/elections/:electionId/constituencies/:constituencyId/results"
     const indParty = allParties.find(p => p.abbreviation === "IND");
     const indPartyId = indParty?.id;
 
-    // Check for duplicate parties (excluding Independent)
+    // Check for duplicate parties (excluding Independent) and duplicate Independent names
     const partyCounts = new Map<number, number>();
+    const independentNames = new Set<string>();
+
     for (const cand of candidates) {
       const pId = Number(cand.partyId);
       if (isNaN(pId)) continue;
+      const cleanName = String(cand.name).trim();
+
       if (pId !== indPartyId) {
         partyCounts.set(pId, (partyCounts.get(pId) || 0) + 1);
         if ((partyCounts.get(pId) || 0) > 1) {
@@ -186,6 +190,14 @@ router.put("/admin/elections/:electionId/constituencies/:constituencyId/results"
             error: `A party (except Independents) can only stand one candidate per seat. Party "${partyAbbr}" has multiple candidates.`
           });
         }
+      } else {
+        const lowerName = cleanName.toLowerCase();
+        if (independentNames.has(lowerName)) {
+          return res.status(400).json({
+            error: `Multiple independent candidates cannot have the exact same name: "${cleanName}".`
+          });
+        }
+        independentNames.add(lowerName);
       }
     }
 
