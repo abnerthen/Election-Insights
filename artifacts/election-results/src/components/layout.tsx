@@ -32,14 +32,14 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
   onElectionChange: (id: number) => void;
 }) {
   const { data: elections, isLoading } = useListElections({ query: { queryKey: getListElectionsQueryKey() } });
-  
+
   const [location, setLocation] = useLocation();
   const [scope, setScope] = useState<"federal" | "state">("federal");
   const [stateFilter, setStateFilter] = useState<string>("Johor");
 
   const triggerElectionChange = (nextElectionId: number) => {
     onElectionChange(nextElectionId);
-    
+
     // Check if location matches /constituency/:id
     const match = location.match(/^\/constituency\/(\d+)/);
     if (match) {
@@ -64,11 +64,11 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
   const handleScopeChange = (newScope: "federal" | "state") => {
     if (!elections) return;
     setScope(newScope);
-    
+
     // Find the most recent election for the new scope
-    const filtered = elections.filter(e => 
-      newScope === "federal" 
-        ? e.scope === "federal" 
+    const filtered = elections.filter(e =>
+      newScope === "federal"
+        ? e.scope === "federal"
         : e.scope === "state" && e.state === stateFilter
     );
 
@@ -82,7 +82,7 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
   const handleStateChange = (newState: string) => {
     if (!elections) return;
     setStateFilter(newState);
-    
+
     const filtered = elections.filter(e => e.scope === "state" && e.state === newState);
     if (filtered.length > 0) {
       const sorted = [...filtered].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -95,17 +95,17 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans antialiased selection:bg-primary selection:text-primary-foreground">
-      
+
       {/* Sticky Premium Header */}
       <header className="sticky top-0 z-50 w-full border-b border-border bg-background/85 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          
+
           <div className="flex items-center gap-3">
             <div className="bg-gradient-to-tr from-amber-500 to-yellow-400 text-slate-950 px-2 py-1 rounded font-black tracking-widest text-xs uppercase shadow-md">
-              GE / PRN
+              GE / PRU
             </div>
             <Link href="/" className="font-serif text-lg md:text-xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-200 flex items-center uppercase hover:opacity-90 transition-opacity">
-              Malaysia <span className="text-muted-foreground ml-2 font-normal font-sans text-sm tracking-normal capitalize hidden sm:inline">Election Insights</span>
+              Malaysia <span className="text-muted-foreground ml-2 font-normal font-sans text-sm tracking-normal capitalize hidden sm:inline">Election Results Dashboard</span>
             </Link>
           </div>
         </div>
@@ -114,7 +114,7 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
       {/* Segmented Control / Filter Bar */}
       <div className="bg-secondary/40 border-b border-border/60 py-3 shadow-md">
         <div className="container mx-auto px-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          
+
           {/* Level Toggle: Federal vs State
           <div className="flex items-center gap-3">
             <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Level:</span>
@@ -146,7 +146,7 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
 
           {/* State Dropdown + Election Selection */}
           <div className="flex flex-wrap items-center gap-4">
-            
+
             {/* scope === "state" && (
               <div className="flex items-center gap-2">
                 <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">State:</span>
@@ -204,10 +204,10 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
       <footer className="border-t border-border bg-card py-8 mt-16 text-center">
         <div className="container mx-auto px-4 flex flex-col items-center gap-3">
           <div className="font-serif text-sm font-black tracking-widest text-muted-foreground uppercase">
-            Malaysia Election Results Archive
+            Malaysian Live Election Results Dashboard
           </div>
           <div className="text-xs text-muted-foreground/80 max-w-md">
-            Providing real-time updates and historical analysis for state and federal elections across Malaysia.
+            Data sourced from electiondata.my and Wikipedia. All rights reserved by their respective owners. Please direct any queries and suggestions on dashboard to @abnerthen on GitHub.
           </div>
         </div>
       </footer>
