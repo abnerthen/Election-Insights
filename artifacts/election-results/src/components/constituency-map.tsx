@@ -71,26 +71,26 @@ export function ConstituencyMap({ constituencies }: ConstituencyMapProps) {
                   data-testid={`map-cell-${c.id}`}
                 >
                   {/* Tooltip */}
-                  <div className="opacity-0 group-hover:opacity-100 absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-slate-900 text-white p-3 rounded shadow-xl border border-slate-700 pointer-events-none transition-opacity z-50">
+                  <div className="opacity-0 group-hover:opacity-100 absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-slate-100 text-slate-900 p-3 rounded shadow-xl border border-slate-300 pointer-events-none transition-opacity z-50">
                     <div className="font-bold text-sm mb-1">
                       {c.code ? `[${c.code}] ` : ""}{c.name}
                     </div>
                     {isDeclared ? (
                       <>
-                        <div className="text-xs text-slate-300">{c.winningPartyName} win</div>
-                        <div className="text-xs font-semibold mt-1" style={{ color: c.winningPartyColor || 'white' }}>
+                        <div className="text-xs text-slate-600">{c.winningPartyName} win</div>
+                        <div className="text-xs font-semibold mt-1" style={{ color: c.winningPartyColor || 'inherit' }}>
                           {c.winningCandidateName}
                         </div>
                         {c.margin && (
-                          <div className="text-xs mt-1 bg-slate-800 px-1 py-0.5 rounded inline-block">
+                          <div className="text-xs mt-1 bg-slate-200 text-slate-700 px-1 py-0.5 rounded inline-block">
                             Margin: {c.margin.toLocaleString()}
                           </div>
                         )}
                       </>
                     ) : (
-                      <div className="text-xs text-slate-400 italic">Pending...</div>
+                      <div className="text-xs text-slate-500 italic">Pending...</div>
                     )}
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-100" />
                   </div>
                 </div>
               );
@@ -117,26 +117,26 @@ export function ConstituencyMap({ constituencies }: ConstituencyMapProps) {
                 data-testid={`map-cell-${c.id}`}
               >
                 {/* Tooltip */}
-                <div className="opacity-0 group-hover:opacity-100 absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-slate-900 text-white p-3 rounded shadow-xl border border-slate-700 pointer-events-none transition-opacity z-50">
+                <div className="opacity-0 group-hover:opacity-100 absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-slate-100 text-slate-900 p-3 rounded shadow-xl border border-slate-300 pointer-events-none transition-opacity z-50">
                   <div className="font-bold text-sm mb-1">
                     {c.code ? `[${c.code}] ` : ""}{c.name}
                   </div>
                   {isDeclared ? (
                     <>
-                      <div className="text-xs text-slate-300">{c.winningPartyName} win</div>
-                      <div className="text-xs font-semibold mt-1" style={{ color: c.winningPartyColor || 'white' }}>
+                      <div className="text-xs text-slate-600">{c.winningPartyName} win</div>
+                      <div className="text-xs font-semibold mt-1" style={{ color: c.winningPartyColor || 'inherit' }}>
                         {c.winningCandidateName}
                       </div>
                       {c.margin && (
-                        <div className="text-xs mt-1 bg-slate-800 px-1 py-0.5 rounded inline-block">
+                        <div className="text-xs mt-1 bg-slate-200 text-slate-700 px-1 py-0.5 rounded inline-block">
                           Margin: {c.margin.toLocaleString()}
                         </div>
                       )}
                     </>
                   ) : (
-                    <div className="text-xs text-slate-400 italic">Pending...</div>
+                    <div className="text-xs text-slate-500 italic">Pending...</div>
                   )}
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-100" />
                 </div>
               </div>
             );
@@ -224,26 +224,26 @@ export function ConstituencyRowView({ constituencies }: ConstituencyMapProps) {
                       </div>
 
                       {/* Tooltip */}
-                      <div className="opacity-0 group-hover:opacity-100 absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-slate-900 text-white p-3 rounded shadow-xl border border-slate-700 pointer-events-none transition-opacity z-50">
+                      <div className="opacity-0 group-hover:opacity-100 absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-slate-100 text-slate-900 p-3 rounded shadow-xl border border-slate-300 pointer-events-none transition-opacity z-50">
                         <div className="font-bold text-sm mb-1">
                           {c.code ? `[${c.code}] ` : ""}{c.name}
                         </div>
                         {isDeclared ? (
                           <>
-                            <div className="text-xs text-slate-300">{c.winningPartyName} win</div>
-                            <div className="text-xs font-semibold mt-1" style={{ color: c.winningPartyColor || 'white' }}>
+                            <div className="text-xs text-slate-600">{c.winningPartyName} win</div>
+                            <div className="text-xs font-semibold mt-1" style={{ color: c.winningPartyColor || 'inherit' }}>
                               {c.winningCandidateName}
                             </div>
                             {c.margin && (
-                              <div className="text-xs mt-1 bg-slate-800 px-1 py-0.5 rounded inline-block">
+                              <div className="text-xs mt-1 bg-slate-200 text-slate-700 px-1 py-0.5 rounded inline-block">
                                 Margin: {c.margin.toLocaleString()}
                               </div>
                             )}
                           </>
                         ) : (
-                          <div className="text-xs text-slate-400 italic">Pending...</div>
+                          <div className="text-xs text-slate-500 italic">Pending...</div>
                         )}
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-100" />
                       </div>
                     </div>
                   );
