@@ -88,10 +88,10 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
     : [];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans antialiased selection:bg-primary selection:text-primary-foreground">
+    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans antialiased selection:bg-primary selection:text-primary-foreground">
       
       {/* Sticky Premium Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md">
+      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/85 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           
           <div className="flex items-center gap-3">
@@ -99,13 +99,13 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
               GE / PRN
             </div>
             <Link href="/" className="font-serif text-lg md:text-xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-200 flex items-center uppercase hover:opacity-90 transition-opacity">
-              Malaysia <span className="text-slate-400 ml-2 font-normal font-sans text-sm tracking-normal capitalize hidden sm:inline">Election Insights</span>
+              Malaysia <span className="text-muted-foreground ml-2 font-normal font-sans text-sm tracking-normal capitalize hidden sm:inline">Election Insights</span>
             </Link>
           </div>
 
           <div className="flex items-center gap-3">
             <Link href="/admin">
-              <span className="text-xs uppercase tracking-widest text-slate-400 hover:text-white font-bold px-3 py-1.5 rounded-full border border-slate-800 hover:bg-slate-900 transition-all cursor-pointer">
+              <span className="text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground font-bold px-3 py-1.5 rounded-full border border-border hover:bg-secondary transition-all cursor-pointer">
                 Admin Portal
               </span>
             </Link>
@@ -114,30 +114,30 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
       </header>
 
       {/* Segmented Control / Filter Bar */}
-      <div className="bg-slate-900/60 border-b border-slate-800/60 py-3 shadow-md">
+      <div className="bg-secondary/40 border-b border-border/60 py-3 shadow-md">
         <div className="container mx-auto px-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
           
           {/* Level Toggle: Federal vs State */}
           <div className="flex items-center gap-3">
-            <span className="text-xs font-black uppercase tracking-widest text-slate-400">Level:</span>
+            <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Level:</span>
             <ToggleGroup
               type="single"
               value={scope}
               onValueChange={(val) => {
                 if (val) handleScopeChange(val as "federal" | "state");
               }}
-              className="bg-slate-950 p-1 border border-slate-850 rounded-lg inline-flex"
+              className="bg-card p-1 border border-border rounded-lg inline-flex"
             >
               <ToggleGroupItem 
                 value="federal" 
-                className="px-4 py-2 text-xs font-extrabold uppercase tracking-wider rounded-md data-[state=on]:bg-amber-500 data-[state=on]:text-slate-950 transition-all"
+                className="px-4 py-2 text-xs font-extrabold uppercase tracking-wider rounded-md data-[state=on]:bg-amber-500 data-[state=on]:text-black text-foreground transition-all"
               >
                 <Landmark className="w-3.5 h-3.5 mr-1.5" />
                 Parliament
               </ToggleGroupItem>
               <ToggleGroupItem 
                 value="state" 
-                className="px-4 py-2 text-xs font-extrabold uppercase tracking-wider rounded-md data-[state=on]:bg-amber-500 data-[state=on]:text-slate-950 transition-all"
+                className="px-4 py-2 text-xs font-extrabold uppercase tracking-wider rounded-md data-[state=on]:bg-amber-500 data-[state=on]:text-black text-foreground transition-all"
               >
                 <MapPin className="w-3.5 h-3.5 mr-1.5" />
                 State Assembly
@@ -150,9 +150,9 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
             
             {scope === "state" && (
               <div className="flex items-center gap-2">
-                <span className="text-xs font-black uppercase tracking-widest text-slate-400">State:</span>
+                <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">State:</span>
                 <Select value={stateFilter} onValueChange={handleStateChange}>
-                  <SelectTrigger className="w-40 bg-slate-950 border-slate-800 text-sm font-semibold h-9">
+                  <SelectTrigger className="w-40 bg-card border-border text-foreground text-sm font-semibold h-9">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -167,15 +167,15 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
             )}
 
             <div className="flex items-center gap-2">
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Election:</span>
+              <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Election:</span>
               {isLoading ? (
-                <div className="w-[240px] h-9 bg-slate-900 animate-pulse rounded-md" />
+                <div className="w-[240px] h-9 bg-secondary animate-pulse rounded-md" />
               ) : (
                 <Select
                   value={currentElectionId ? currentElectionId.toString() : ""}
                   onValueChange={(val) => onElectionChange(parseInt(val))}
                 >
-                  <SelectTrigger className="w-[260px] bg-slate-950 border-slate-800 text-sm font-bold h-9">
+                  <SelectTrigger className="w-[260px] bg-card border-border text-foreground text-sm font-bold h-9">
                     <SelectValue placeholder="Select Election" />
                   </SelectTrigger>
                   <SelectContent>
@@ -202,12 +202,12 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-900 bg-slate-950 py-8 mt-16 text-center">
+      <footer className="border-t border-border bg-card py-8 mt-16 text-center">
         <div className="container mx-auto px-4 flex flex-col items-center gap-3">
-          <div className="font-serif text-sm font-black tracking-widest text-slate-400 uppercase">
+          <div className="font-serif text-sm font-black tracking-widest text-muted-foreground uppercase">
             Malaysia Election Results Archive
           </div>
-          <div className="text-xs text-slate-500 max-w-md">
+          <div className="text-xs text-muted-foreground/80 max-w-md">
             Providing real-time updates and historical analysis for state and federal elections across Malaysia.
           </div>
         </div>

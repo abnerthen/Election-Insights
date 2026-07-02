@@ -56,7 +56,8 @@ export function GaugeCard({
           <path
             d={arcPath}
             fill="none"
-            stroke="#1e293b"
+            stroke="currentColor"
+            className="text-secondary"
             strokeWidth={strokeW}
             strokeLinecap="round"
           />

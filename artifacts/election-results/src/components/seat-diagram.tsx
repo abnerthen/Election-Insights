@@ -61,7 +61,7 @@ export function SeatDiagram({ seats, totalSeats, majorityThreshold }: SeatDiagra
     }
   }
   while (flatSeats.length < totalSeats) {
-    flatSeats.push({ color: "#1e293b", name: "Undeclared" });
+    flatSeats.push({ color: "var(--color-undeclared)", name: "Undeclared" });
   }
 
   const declaredCount = seats.reduce((s, p) => s + p.seatsWon, 0);
@@ -80,7 +80,8 @@ export function SeatDiagram({ seats, totalSeats, majorityThreshold }: SeatDiagra
             key={`guide-${i}`}
             d={`M ${CX - ring.radius} ${CY} A ${ring.radius} ${ring.radius} 0 0 1 ${CX + ring.radius} ${CY}`}
             fill="none"
-            stroke="#1e293b"
+            stroke="currentColor"
+            className="text-border/60"
             strokeWidth="1"
           />
         ))}
@@ -89,7 +90,9 @@ export function SeatDiagram({ seats, totalSeats, majorityThreshold }: SeatDiagra
         <line
           x1={CX - outerR - 16} y1={CY}
           x2={CX + outerR + 16} y2={CY}
-          stroke="#334155" strokeWidth="1.5"
+          stroke="currentColor"
+          className="text-border"
+          strokeWidth="1.5"
         />
 
         {/* Majority line */}
@@ -98,13 +101,27 @@ export function SeatDiagram({ seats, totalSeats, majorityThreshold }: SeatDiagra
             <line
               x1={CX} y1={CY - outerR - 8}
               x2={CX} y2={CY}
-              stroke="#94a3b8" strokeWidth="1.5" strokeDasharray="5 4"
+              stroke="currentColor"
+              className="text-muted-foreground/40"
+              strokeWidth="1.5"
+              strokeDasharray="5 4"
             />
-            <rect x={CX - 58} y={CY - outerR - 27} width="116" height="20" rx="3" fill="#1e293b" stroke="#334155" />
+            <rect
+              x={CX - 58}
+              y={CY - outerR - 27}
+              width="116"
+              height="20"
+              rx="3"
+              fill="currentColor"
+              className="text-card stroke-border"
+            />
             <text
               x={CX} y={CY - outerR - 13}
               textAnchor="middle" fontSize="10" fontFamily="sans-serif"
-              fontWeight="700" fill="#94a3b8" letterSpacing="1.5"
+              fontWeight="700"
+              fill="currentColor"
+              className="text-muted-foreground"
+              letterSpacing="1.5"
             >
               MAJORITY ({majorityThreshold})
             </text>
@@ -133,14 +150,19 @@ export function SeatDiagram({ seats, totalSeats, majorityThreshold }: SeatDiagra
         <text
           x={CX} y={CY + 38}
           textAnchor="middle" fontSize="44"
-          fontFamily="Georgia, serif" fontWeight="bold" fill="white"
+          fontFamily="Georgia, serif" fontWeight="bold"
+          fill="currentColor"
+          className="text-foreground"
         >
           {declaredCount}
         </text>
         <text
           x={CX} y={CY + 56}
           textAnchor="middle" fontSize="10"
-          fontFamily="sans-serif" fill="#64748b" letterSpacing="2"
+          fontFamily="sans-serif"
+          fill="currentColor"
+          className="text-muted-foreground"
+          letterSpacing="2"
         >
           / {totalSeats} SEATS DECLARED
         </text>

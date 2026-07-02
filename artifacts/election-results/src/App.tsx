@@ -37,11 +37,6 @@ function AppRoutes() {
 }
 
 function App() {
-  // Enforce dark mode by default for the newsroom vibe
-  if (typeof document !== 'undefined') {
-    document.documentElement.classList.add('dark');
-  }
-
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
