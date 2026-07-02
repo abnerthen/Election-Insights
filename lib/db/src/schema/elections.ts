@@ -1,6 +1,5 @@
 import { pgTable, serial, text, integer, timestamp, real, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod/v4";
 
 export const electionStatusEnum = pgEnum("election_status", ["declared", "counting", "pending"]);
 export const constituencyStatusEnum = pgEnum("constituency_status", ["declared", "counting", "pending"]);
