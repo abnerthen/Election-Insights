@@ -214,7 +214,7 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
                         <div className="w-16 text-xs font-bold uppercase tracking-wider text-muted-foreground flex-shrink-0">
                           {party.partyAbbreviation}
                         </div>
-                        <div className="flex-1 bg-secondary/60 h-5 rounded-sm overflow-hidden relative">
+                        <div className="flex-1 bg-secondary/60 h-5 rounded-sm overflow-hidden relative" style={{ isolation: "isolate" }}>
                           <div
                             className="h-full rounded-sm"
                             style={{
@@ -223,7 +223,10 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
                               opacity: 0.85,
                             }}
                           />
-                          <span className="absolute inset-0 flex items-center px-2 text-xs font-semibold text-white drop-shadow">
+                          <span
+                            className="absolute inset-0 flex items-center px-2 text-xs font-semibold text-white drop-shadow"
+                            style={{ mixBlendMode: "difference" }}
+                          >
                             {party.voteSharePercent.toFixed(2)}%
                           </span>
                         </div>
@@ -274,12 +277,15 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
                       <div className="w-20 font-bold text-sm truncate group-hover:text-white transition-colors">
                         {party.partyAbbreviation}
                       </div>
-                      <div className="flex-1 bg-secondary h-6 rounded overflow-hidden relative">
+                      <div className="flex-1 bg-secondary h-6 rounded overflow-hidden relative" style={{ isolation: "isolate" }}>
                         <div
                           className="absolute top-0 left-0 bottom-0 transition-all duration-1000 ease-out"
                           style={{ width: `${party.voteSharePercent}%`, backgroundColor: party.partyColor }}
                         />
-                        <div className="absolute inset-0 flex items-center px-3 text-xs font-bold text-white drop-shadow-md">
+                        <div
+                          className="absolute inset-0 flex items-center px-3 text-xs font-bold text-white drop-shadow-md"
+                          style={{ mixBlendMode: "difference" }}
+                        >
                           {party.voteSharePercent.toFixed(2)}%
                         </div>
                       </div>
