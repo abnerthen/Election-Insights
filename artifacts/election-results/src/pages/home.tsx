@@ -3,7 +3,8 @@ import { useGetElectionSummary, getGetElectionSummaryQueryKey,
   useListConstituencies, getListConstituenciesQueryKey,
   useGetElectionVoteShare, getGetElectionVoteShareQueryKey,
   useGetElection, getGetElectionQueryKey,
-  useListParties, getListPartiesQueryKey
+  useListParties, getListPartiesQueryKey,
+  useGetConstituency, getGetConstituencyQueryKey
 } from "@workspace/api-client-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SeatDiagram } from "@/components/seat-diagram";
@@ -32,6 +33,16 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
   );
   const { data: voteShare } = useGetElectionVoteShare(currentElectionId, {
     query: { enabled: !!currentElectionId, queryKey: getGetElectionVoteShareQueryKey(currentElectionId), refetchInterval: 5000 }
+  });
+
+  // Find the seat with the slimmest majority among declared constituencies
+  const declaredConstituencies = constituencies?.filter(c => c.status === "declared" && c.margin !== null) ?? [];
+  const slimmestSeat = declaredConstituencies.length > 0
+    ? [...declaredConstituencies].sort((a, b) => (a.margin ?? 0) - (b.margin ?? 0))[0]
+    : null;
+
+  const { data: slimmestSeatDetails } = useGetConstituency(slimmestSeat?.id ?? 0, { electionId: currentElectionId ?? undefined }, {
+    query: { enabled: !!slimmestSeat, queryKey: getGetConstituencyQueryKey(slimmestSeat?.id ?? 0, { electionId: currentElectionId ?? undefined }), refetchInterval: 5000 }
   });
 
   if (loadingSummary || loadingSeats || loadingConstituencies) {
@@ -102,16 +113,51 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
             subtitle={`${summary.totalVotesCast.toLocaleString()} of ${summary.totalRegisteredVoters.toLocaleString()} voters`}
           />
 
-          {/* Card 3: Vote share pie chart */}
-          {voteShare && (
-            <PieChartCard
-              title="Vote Share"
-              slices={voteShare
-                .filter(p => p.totalVotes > 0)
-                .sort((a, b) => b.totalVotes - a.totalVotes)
-                .map(p => ({ label: p.partyAbbreviation, value: p.totalVotes, color: p.partyColor }))}
-            />
-          )}
+          {/* Card 3: Slimmest Majority Seat */}
+          <div className="bg-card border border-border p-4 rounded-lg flex flex-col relative overflow-hidden">
+            <span className="text-muted-foreground text-xs uppercase tracking-widest font-bold">
+              Slimmest Majority
+            </span>
+            {slimmestSeat ? (
+              <div className="flex flex-col gap-2 mt-1 flex-1 justify-between">
+                <div>
+                  <div className="text-xl font-serif font-bold text-foreground truncate">
+                    {slimmestSeat.code ? `[${slimmestSeat.code}] ` : ""}{slimmestSeat.name}
+                  </div>
+                  <div className="text-xs text-muted-foreground font-semibold">
+                    Winner: {slimmestSeat.winningCandidateName} ({slimmestSeat.winningPartyAbbreviation})
+                  </div>
+                  <div className="text-sm font-bold text-amber-400 mt-1">
+                    Margin: {slimmestSeat.margin?.toLocaleString()} votes
+                  </div>
+                </div>
+
+                {/* Candidate vote shares list */}
+                {slimmestSeatDetails ? (
+                  <div className="flex flex-col gap-1.5 mt-2 border-t border-border/40 pt-2">
+                    {slimmestSeatDetails.candidates.map((cand) => {
+                      const share = slimmestSeatDetails.votesCast > 0
+                        ? (cand.votes / slimmestSeatDetails.votesCast) * 100
+                        : 0;
+                      return (
+                        <div key={cand.candidateId} className="flex items-center gap-2 text-xs">
+                          <div className="w-8 font-bold text-muted-foreground truncate">{cand.partyAbbreviation}</div>
+                          <div className="flex-1 bg-secondary/40 h-3 rounded overflow-hidden relative" style={{ isolation: "isolate" }}>
+                            <div className="h-full rounded" style={{ width: `${share}%`, backgroundColor: cand.partyColor }} />
+                          </div>
+                          <div className="w-10 text-right font-semibold text-foreground">{share.toFixed(1)}%</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="h-12 bg-secondary/40 animate-pulse rounded mt-2" />
+                )}
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground mt-4">No results declared yet.</div>
+            )}
+          </div>
 
           {/* Card 4: Projected winner */}
           <div className="bg-card border border-border p-4 rounded-lg flex flex-col relative overflow-hidden">

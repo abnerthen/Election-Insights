@@ -69,6 +69,26 @@ router.get("/constituencies", async (req, res) => {
 
     const winnerMap = new Map(winnerRows.map((w) => [w.constituencyId, w]));
 
+    // Fetch all candidate votes to compute margins of victory
+    const allVotes = await db
+      .select({
+        constituencyId: candidateVotesTable.constituencyId,
+        votes: candidateVotesTable.votes,
+      })
+      .from(candidateVotesTable)
+      .where(
+        electionId !== null ? eq(candidateVotesTable.electionId, electionId) : sql`1=1`
+      )
+      .orderBy(candidateVotesTable.constituencyId, sql`${candidateVotesTable.votes} desc`);
+
+    const votesMap = new Map<number, number[]>();
+    for (const v of allVotes) {
+      if (!votesMap.has(v.constituencyId)) {
+        votesMap.set(v.constituencyId, []);
+      }
+      votesMap.get(v.constituencyId)!.push(v.votes);
+    }
+
     res.json(
       results.map((r) => {
         const winner = winnerMap.get(r.id);
@@ -77,7 +97,11 @@ router.get("/constituencies", async (req, res) => {
             ? Math.round((r.votesCast / r.registeredVoters) * 10000) / 100
             : 0;
 
-        // Find second place to compute margin — simplified: just return winner votes
+        const constituencyVotes = votesMap.get(r.id) || [];
+        const margin = constituencyVotes.length > 1
+          ? constituencyVotes[0] - constituencyVotes[1]
+          : (constituencyVotes[0] ?? null);
+
         return {
           id: r.id,
           electionId: r.electionId,
@@ -97,7 +121,7 @@ router.get("/constituencies", async (req, res) => {
           winningPartyAbbreviation: winner?.partyAbbreviation ?? null,
           winningCandidateName: winner?.candidateName ?? null,
           winningVotes: winner?.votes ?? null,
-          margin: null,
+          margin,
           latitude: r.latitude ?? null,
           longitude: r.longitude ?? null,
           gridX: r.gridX ?? null,
