@@ -147,25 +147,7 @@ export function SeatDiagram({ seats, totalSeats, majorityThreshold }: SeatDiagra
         })}
 
         {/* Centre count */}
-        <text
-          x={CX} y={CY + 38}
-          textAnchor="middle" fontSize="44"
-          fontFamily="Georgia, serif" fontWeight="bold"
-          fill="currentColor"
-          className="text-foreground"
-        >
-          {declaredCount}
-        </text>
-        <text
-          x={CX} y={CY + 56}
-          textAnchor="middle" fontSize="10"
-          fontFamily="sans-serif"
-          fill="currentColor"
-          className="text-muted-foreground"
-          letterSpacing="2"
-        >
-          / {totalSeats} SEATS DECLARED
-        </text>
+
       </svg>
     </div>
   );
