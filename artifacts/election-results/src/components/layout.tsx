@@ -102,14 +102,6 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
               Malaysia <span className="text-muted-foreground ml-2 font-normal font-sans text-sm tracking-normal capitalize hidden sm:inline">Election Insights</span>
             </Link>
           </div>
-
-          <div className="flex items-center gap-3">
-            <Link href="/admin">
-              <span className="text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground font-bold px-3 py-1.5 rounded-full border border-border hover:bg-secondary transition-all cursor-pointer">
-                Admin Portal
-              </span>
-            </Link>
-          </div>
         </div>
       </header>
 
