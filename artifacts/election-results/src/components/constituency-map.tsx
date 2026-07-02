@@ -22,17 +22,31 @@ export function ConstituencyMap({ constituencies }: ConstituencyMapProps) {
   // Default sorting by code for clean flow
   const sorted = [...constituencies].sort((a, b) => compareCodes(a.code, b.code));
 
-  // Calculate 15x15 grid cells if coordinates are present
-  const gridSize = 15;
+  // Calculate grid cells if coordinates are present
   const gridCells: { x: number; y: number; constituency?: ConstituencyResult }[] = [];
+  let gridCols = cols;
+  let minX = 1;
+  let maxX = 15;
+  let minY = 1;
+  let maxY = 15;
+
   if (hasGridCoords) {
+    const activeCoords = constituencies.filter(c => (c as any).gridX != null && (c as any).gridY != null);
+    if (activeCoords.length > 0) {
+      minX = Math.min(...activeCoords.map(c => (c as any).gridX!));
+      maxX = Math.max(...activeCoords.map(c => (c as any).gridX!));
+      minY = Math.min(...activeCoords.map(c => (c as any).gridY!));
+      maxY = Math.max(...activeCoords.map(c => (c as any).gridY!));
+    }
+    gridCols = maxX - minX + 1;
+
     const constLookup = new Map(
       constituencies
-        .filter(c => c.gridX != null && c.gridY != null)
-        .map(c => [`${c.gridX},${c.gridY}`, c])
+        .filter(c => (c as any).gridX != null && (c as any).gridY != null)
+        .map(c => [`${(c as any).gridX},${(c as any).gridY}`, c])
     );
-    for (let r = 1; r <= gridSize; r++) {
-      for (let c = 1; c <= gridSize; c++) {
+    for (let r = minY; r <= maxY; r++) {
+      for (let c = minX; c <= maxX; c++) {
         const key = `${c},${r}`;
         const constItem = constLookup.get(key);
         gridCells.push({ x: c, y: r, constituency: constItem });
@@ -41,18 +55,17 @@ export function ConstituencyMap({ constituencies }: ConstituencyMapProps) {
   }
 
   return (
-    <div className="w-full">
-      <div className="flex justify-between items-center mb-6 max-w-[800px] mx-auto px-4">
+    <div className="w-full flex flex-col items-center">
+      <div className="flex justify-between items-center mb-6 w-full max-w-[800px] px-4">
         <div className="text-xs uppercase tracking-widest text-muted-foreground font-bold">
           Constituency Grid
         </div>
       </div>
 
       <div
-        className="grid gap-[2px] mx-auto p-4 bg-card border border-border rounded-lg"
+        className="grid gap-[2px] p-4 bg-card border border-border rounded-lg w-full max-w-[800px]"
         style={{
-          gridTemplateColumns: hasGridCoords ? "repeat(15, minmax(0, 1fr))" : `repeat(${cols}, minmax(0, 1fr))`,
-          maxWidth: "800px"
+          gridTemplateColumns: hasGridCoords ? `repeat(${gridCols}, minmax(0, 1fr))` : `repeat(${cols}, minmax(0, 1fr))`,
         }}
       >
         {hasGridCoords ? (
