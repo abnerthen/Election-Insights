@@ -84,10 +84,18 @@ router.get("/elections/:id/summary", async (req, res) => {
       })
       .from(candidateVotesTable)
       .innerJoin(candidatesTable, eq(candidateVotesTable.candidateId, candidatesTable.id))
+      .innerJoin(
+        constituencyResultsTable,
+        and(
+          eq(constituencyResultsTable.constituencyId, candidateVotesTable.constituencyId),
+          eq(constituencyResultsTable.electionId, id)
+        )
+      )
       .where(
         and(
           eq(candidateVotesTable.electionId, id),
-          eq(candidateVotesTable.isWinner, 1)
+          eq(candidateVotesTable.isWinner, 1),
+          eq(constituencyResultsTable.status, "declared")
         )
       )
       .groupBy(candidatesTable.partyId)
@@ -142,7 +150,7 @@ router.get("/elections/:id/seat-breakdown", async (req, res) => {
         partyName: partiesTable.name,
         partyAbbreviation: partiesTable.abbreviation,
         partyColor: partiesTable.color,
-        seatsWon: sql<number>`count(${candidateVotesTable.id})`.as("seatsWon"),
+        seatsWon: sql<number>`count(case when ${constituencyResultsTable.status} = 'declared' then ${candidateVotesTable.id} else null end)`.as("seatsWon"),
       })
       .from(partiesTable)
       .leftJoin(candidatesTable, eq(candidatesTable.partyId, partiesTable.id))
@@ -154,8 +162,15 @@ router.get("/elections/:id/seat-breakdown", async (req, res) => {
           eq(candidateVotesTable.isWinner, 1)
         )
       )
+      .leftJoin(
+        constituencyResultsTable,
+        and(
+          eq(constituencyResultsTable.constituencyId, candidateVotesTable.constituencyId),
+          eq(constituencyResultsTable.electionId, id)
+        )
+      )
       .groupBy(partiesTable.id, partiesTable.name, partiesTable.abbreviation, partiesTable.color)
-      .orderBy(sql`count(${candidateVotesTable.id}) desc`);
+      .orderBy(sql`count(case when ${constituencyResultsTable.status} = 'declared' then ${candidateVotesTable.id} else null end) desc`);
 
     return res.json(
       rows.map((r) => ({
