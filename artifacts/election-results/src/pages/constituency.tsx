@@ -30,6 +30,13 @@ export function ConstituencyPage() {
   const isDeclared = constituency.status === "declared";
   const winner = constituency.candidates.find(c => c.isWinner);
 
+  // Compute majority stats
+  const sortedCandidates = [...constituency.candidates].sort((a, b) => b.votes - a.votes);
+  const winnerVotes = sortedCandidates[0]?.votes ?? 0;
+  const runnerUpVotes = sortedCandidates[1]?.votes ?? 0;
+  const majorityVotes = sortedCandidates.length > 1 ? winnerVotes - runnerUpVotes : winnerVotes;
+  const majorityPercent = constituency.votesCast > 0 ? (majorityVotes / constituency.votesCast) * 100 : 0;
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <Link href="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors uppercase tracking-widest text-xs font-bold">
@@ -138,31 +145,35 @@ export function ConstituencyPage() {
             <h2 className="font-serif text-xl uppercase tracking-widest mb-6 border-b border-border pb-2">Turnout Data</h2>
             <div className="space-y-6">
               <div>
-                <div className="text-sm text-muted-foreground uppercase tracking-widest font-bold mb-1">Voter Turnout</div>
-                <div className="text-3xl font-serif font-bold text-foreground">{constituency.turnoutPercent.toFixed(1)}%</div>
-              </div>
-
-              <div>
-                <div className="text-sm text-muted-foreground uppercase tracking-widest font-bold mb-1">Total Votes Cast</div>
-                <div className="text-2xl font-serif font-bold text-foreground flex items-center gap-2">
-                  <Users className="w-5 h-5 text-muted-foreground" />
-                  {constituency.votesCast.toLocaleString()}
-                </div>
-              </div>
-
-              <div>
-                <div className="text-sm text-muted-foreground uppercase tracking-widest font-bold mb-1">Spoilt Votes</div>
-                <div className="text-2xl font-serif font-bold text-foreground">
-                  {constituency.spoiltVotes?.toLocaleString() ?? 0}
-                  <span className="text-sm font-sans font-normal text-muted-foreground ml-2">
-                    ({(constituency.votesCast > 0 ? ((constituency.spoiltVotes ?? 0) / constituency.votesCast) * 100 : 0).toFixed(2)}% of turnout)
+                <div className="text-sm text-muted-foreground uppercase tracking-widest font-bold mb-1">votes / registered (turnout)</div>
+                <div className="font-serif font-bold text-foreground flex items-baseline gap-1">
+                  <span className="text-xl">{constituency.votesCast.toLocaleString()}</span>
+                  <span className="text-muted-foreground text-sm font-normal">/</span>
+                  <span className="text-base font-semibold text-muted-foreground">{constituency.registeredVoters.toLocaleString()}</span>
+                  <span className="text-sm font-sans font-normal text-muted-foreground ml-1">
+                    ({constituency.turnoutPercent.toFixed(1)}%)
                   </span>
                 </div>
               </div>
 
               <div>
-                <div className="text-sm text-muted-foreground uppercase tracking-widest font-bold mb-1">Registered Voters</div>
-                <div className="text-xl font-serif font-bold text-muted-foreground">{constituency.registeredVoters.toLocaleString()}</div>
+                <div className="text-sm text-muted-foreground uppercase tracking-widest font-bold mb-1">Spoilt Votes</div>
+                <div className="text-xl font-serif font-bold text-foreground flex items-baseline">
+                  <span>{(constituency.spoiltVotes ?? 0).toLocaleString()}</span>
+                  <span className="text-sm font-sans font-normal text-muted-foreground ml-2">
+                    ({(constituency.votesCast > 0 ? (((constituency.spoiltVotes ?? 0) / constituency.votesCast) * 100) : 0).toFixed(2)}% of total)
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-sm text-muted-foreground uppercase tracking-widest font-bold mb-1">Majority</div>
+                <div className="text-xl font-serif font-bold text-foreground flex items-baseline">
+                  <span>{majorityVotes.toLocaleString()}</span>
+                  <span className="text-sm font-sans font-normal text-muted-foreground ml-2">
+                    ({majorityPercent.toFixed(2)}% of total)
+                  </span>
+                </div>
               </div>
             </div>
           </div>
