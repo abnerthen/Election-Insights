@@ -133,27 +133,41 @@ export interface PartyDropdownEntry {
   name_bm: string;
 }
 
-// electiondata.my can return more than one row for the same party_uid within
-// a single by_party response — independents in particular get split across
-// rows (e.g. by differing coalition_uid) while sharing the generic "000-BEBAS"
-// id. Downstream code (and React list keys) assumes party_uid is unique per
-// response, so merge same-uid rows by summing their counts.
-function mergePartyRows(rows: PartyByElection[]): PartyByElection[] {
-  const merged = new Map<string, PartyByElection>();
+// Rolls individual parties up into their coalition (e.g. PAS + BERSATU -> PN,
+// PBB + PRS + PDP -> GPS) since that's what actually determines who can form
+// a government. Parties that contested without a coalition (coalition_uid
+// "000-ALONE" — genuine independents, but also named parties like WARISAN
+// that ran solo) are NOT merged together; each keeps its own row, since
+// "ALONE" isn't a real shared political identity.
+//
+// This also does the job an earlier mergePartyRows() helper used to: a
+// single party_uid (typically the generic "000-BEBAS" independent bucket)
+// can appear more than once in a by_party response under *different*
+// coalitions when some of those candidates were coalition-aligned and others
+// genuinely standalone. Merging by party_uid alone before grouping by
+// coalition would silently fold the standalone seats into whichever
+// coalition happened to appear first — grouping directly from the raw rows
+// here keeps each coalition context correctly separated instead.
+export function aggregateByCoalition(rows: PartyByElection[]): PartyByElection[] {
+  const groups = new Map<string, PartyByElection>();
   for (const row of rows) {
-    const existing = merged.get(row.party_uid);
+    const isAlone = row.coalition_uid === "000-ALONE";
+    const key = isAlone ? row.party_uid : row.coalition_uid;
+    const existing = groups.get(key);
     if (!existing) {
-      merged.set(row.party_uid, { ...row });
+      groups.set(key, { ...row, party_uid: key, party: isAlone ? row.party : row.coalition });
       continue;
     }
     existing.seats_contested += row.seats_contested;
     existing.seats_won += row.seats_won;
     existing.votes += row.votes;
-    existing.seats_contested_perc = existing.seats_total > 0 ? (existing.seats_contested / existing.seats_total) * 100 : 0;
-    existing.seats_won_perc = existing.seats_total > 0 ? (existing.seats_won / existing.seats_total) * 100 : 0;
-    existing.votes_perc = existing.votes_total > 0 ? (existing.votes / existing.votes_total) * 100 : 0;
   }
-  return [...merged.values()];
+  for (const g of groups.values()) {
+    g.seats_contested_perc = g.seats_total > 0 ? (g.seats_contested / g.seats_total) * 100 : 0;
+    g.seats_won_perc = g.seats_total > 0 ? (g.seats_won / g.seats_total) * 100 : 0;
+    g.votes_perc = g.votes_total > 0 ? (g.votes / g.votes_total) * 100 : 0;
+  }
+  return [...groups.values()];
 }
 
 export const electionDataClient = {
@@ -163,7 +177,7 @@ export const electionDataClient = {
     ),
   getElectionsByParty: (state: string, election: string) =>
     get<{ by_party: PartyByElection[] }>("/elections/by_party", { state, election }).then((r) =>
-      mergePartyRows(r.by_party)
+      aggregateByCoalition(r.by_party)
     ),
   getElectionsBySeat: (state: string, election: string) =>
     get<{ by_seat: SeatByElection[] }>("/elections/by_seat", { state, election }).then((r) => r.by_seat),
