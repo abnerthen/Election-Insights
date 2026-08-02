@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { PartySeatCount } from "@workspace/api-client-react";
 
 interface SeatDiagramProps {
@@ -6,31 +7,74 @@ interface SeatDiagramProps {
   majorityThreshold?: number;
 }
 
-// Concentric arc ring definitions for 56 seats
-const RINGS = [
-  { radius: 78,  count: 8  },
-  { radius: 116, count: 12 },
-  { radius: 154, count: 16 },
-  { radius: 192, count: 20 },
-];
+interface Ring {
+  radius: number;
+  count: number;
+}
 
 const CX = 400;
-const CY = 300;
 const SEAT_R = 9;
+const TOP_PADDING = 50;
+const BOTTOM_PADDING = 20;
 
-function buildPositions() {
-  // Generate all positions then sort by angle (right → left)
-  // so that the fill sweeps across all rings simultaneously (correct hemicycle)
-  const all: { x: number; y: number; angle: number; radius: number }[] = [];
+// Same geometry (78/38/30.4) that originally produced the fixed 8/12/16/20-seat,
+// 56-seat hemicycle — generalized here to any seat count so every assembly
+// (Perlis's 15 seats up to the 222-seat federal Parliament) fills its rings
+// completely instead of leaving gaps or seats with nowhere to render.
+function buildRings(totalSeats: number): Ring[] {
+  if (totalSeats <= 0) return [];
 
-  for (const ring of RINGS) {
+  const innerRadius = 78;
+  const rowGap = 38;
+  const arcSpacing = 30.4;
+
+  const rings: Ring[] = [];
+  let radius = innerRadius;
+  let cumulative = 0;
+  while (cumulative < totalSeats) {
+    const count = Math.max(1, Math.round((Math.PI * radius) / arcSpacing));
+    rings.push({ radius, count });
+    cumulative += count;
+    radius += rowGap;
+  }
+
+  // The greedy loop above almost always overshoots totalSeats on its last
+  // ring — scale every ring down proportionally (not just the last one) so
+  // the trim is spread evenly and doesn't leave one ring looking like a
+  // sliver next to a full one.
+  if (cumulative > totalSeats) {
+    const scale = totalSeats / cumulative;
+    const floored = rings.map((r) => Math.floor(r.count * scale));
+    let remainder = totalSeats - floored.reduce((a, b) => a + b, 0);
+    const byRemainder = rings
+      .map((r, i) => ({ i, frac: r.count * scale - floored[i] }))
+      .sort((a, b) => b.frac - a.frac);
+    for (let k = 0; k < byRemainder.length && remainder > 0; k++) {
+      floored[byRemainder[k].i] += 1;
+      remainder--;
+    }
+    rings.forEach((r, i) => {
+      r.count = floored[i];
+    });
+  }
+
+  return rings.filter((r) => r.count > 0);
+}
+
+function buildPositions(rings: Ring[]) {
+  // Generate all positions then sort by angle (right → left) so that the
+  // fill sweeps across all rings simultaneously (correct hemicycle). `y` is
+  // relative to the (as-yet-unknown) center — the caller adds CY.
+  const all: { x: number; yOffset: number; angle: number; radius: number }[] = [];
+
+  for (const ring of rings) {
     const n = ring.count;
     for (let k = 0; k < n; k++) {
       // angle=0 → right baseline, angle=π → left baseline
       const angle = n === 1 ? Math.PI / 2 : (k / (n - 1)) * Math.PI;
       const x = CX + ring.radius * Math.cos(angle);
-      const y = CY - ring.radius * Math.sin(angle);
-      all.push({ x, y, angle, radius: ring.radius });
+      const yOffset = -ring.radius * Math.sin(angle);
+      all.push({ x, yOffset, angle, radius: ring.radius });
     }
   }
 
@@ -46,9 +90,14 @@ function buildPositions() {
   return all;
 }
 
-const POSITIONS = buildPositions();
-
 export function SeatDiagram({ seats, totalSeats, majorityThreshold }: SeatDiagramProps) {
+  const rings = useMemo(() => buildRings(totalSeats), [totalSeats]);
+  const positions = useMemo(() => buildPositions(rings), [rings]);
+
+  const outerR = rings.length > 0 ? rings[rings.length - 1].radius : 0;
+  const CY = outerR + TOP_PADDING;
+  const viewBoxHeight = CY + BOTTOM_PADDING;
+
   // Sort parties: largest first → appears on right (government side)
   const sortedParties = [...seats]
     .filter(p => p.seatsWon > 0)
@@ -64,18 +113,15 @@ export function SeatDiagram({ seats, totalSeats, majorityThreshold }: SeatDiagra
     flatSeats.push({ color: "var(--color-undeclared)", name: "Undeclared" });
   }
 
-  const declaredCount = seats.reduce((s, p) => s + p.seatsWon, 0);
-  const outerR = RINGS[RINGS.length - 1].radius;
-
   return (
     <div className="w-full flex flex-col items-center">
       <svg
-        viewBox="0 0 800 350"
+        viewBox={`0 0 800 ${viewBoxHeight}`}
         className="w-full max-w-3xl h-auto overflow-visible"
         aria-label="Hemicycle parliament diagram"
       >
         {/* Arc guide rails */}
-        {RINGS.map((ring, i) => (
+        {rings.map((ring, i) => (
           <path
             key={`guide-${i}`}
             d={`M ${CX - ring.radius} ${CY} A ${ring.radius} ${ring.radius} 0 0 1 ${CX + ring.radius} ${CY}`}
@@ -129,13 +175,13 @@ export function SeatDiagram({ seats, totalSeats, majorityThreshold }: SeatDiagra
         )}
 
         {/* Seat dots — rendered in position order (already sorted right→left) */}
-        {POSITIONS.map((pos, i) => {
+        {positions.map((pos, i) => {
           const seat = flatSeats[i];
           if (!seat) return null;
           return (
             <circle
               key={i}
-              cx={pos.x} cy={pos.y}
+              cx={pos.x} cy={CY + pos.yOffset}
               r={SEAT_R}
               fill={seat.color}
               stroke="rgba(0,0,0,0.35)"
