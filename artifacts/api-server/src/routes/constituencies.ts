@@ -10,6 +10,7 @@ import {
 } from "../lib/election-data-client";
 import { getPartyColor, getWinnerColor } from "../lib/party-colors";
 import { getSeatLayout } from "../lib/seat-layout";
+import { getSeatDistrict } from "../lib/seat-districts";
 
 const router = Router();
 
@@ -31,19 +32,29 @@ router.get("/constituencies", async (req, res) => {
     return res.json(
       bySeat.map((s) => {
         const { code, name, region: fallbackRegion } = parseSeatName(s.seat, decoded.state);
-        // `s.state` (and parseSeatName's fallback) is just the query param
-        // echoed back (e.g. "Malaysia" for a national query) — /results needs
-        // the seat's *actual* state, so prefer the master roster's mapping.
-        const region = seatStates.get(code) ?? fallbackRegion;
-        const layout = getSeatLayout(region, code);
+        // `fallbackRegion` (from the query's `state` param) is only wrong when
+        // that param was itself a national aggregate ("Malaysia"/"Semenanjung")
+        // — every other query (including all state-assembly queries, which
+        // always specify one real state) already gets the correct state back.
+        // Only consult the master-roster map in that aggregate case: DUN seat
+        // codes like "N.01" restart in every state, so a code-only lookup
+        // would otherwise resolve to whichever state's "N.01" happens to be
+        // last in the roster, not the seat we're actually looking at.
+        const isAggregateQuery = decoded.state === "Malaysia" || decoded.state === "Semenanjung";
+        const stateName = isAggregateQuery ? (seatStates.get(code) ?? fallbackRegion) : fallbackRegion;
+        const layout = getSeatLayout(stateName, code);
+        // For state assembly seats, group by the parliamentary constituency
+        // they fall under (where we have verified data for it) instead of
+        // just the whole state — falls back to the state name otherwise.
+        const district = decoded.type === "dun" ? getSeatDistrict(stateName, code) : null;
         return {
-          id: encodeConstituencyId(s.seat, region, s.date),
+          id: encodeConstituencyId(s.seat, stateName, s.date),
           electionId: electionIdParam,
           name,
-          region,
+          region: district ?? stateName,
           code,
           scope,
-          state: region,
+          state: stateName,
           registeredVoters: s.voters_total,
           votesCast: s.voter_turnout,
           spoiltVotes: s.votes_rejected,
