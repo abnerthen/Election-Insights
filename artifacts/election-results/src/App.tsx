@@ -21,7 +21,7 @@ function AppRoutes() {
         <Layout currentElectionId={currentElectionId} onElectionChange={setCurrentElectionId}>
           <Switch>
             <Route path="/">
-              <HomePage currentElectionId={currentElectionId} />
+              <HomePage currentElectionId={currentElectionId} onElectionChange={setCurrentElectionId} />
             </Route>
             <Route path="/constituency/:id" component={ConstituencyPage} />
             <Route component={NotFound} />
