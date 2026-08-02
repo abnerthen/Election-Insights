@@ -6,15 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 import {
-  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
-  MutationFunction,
   QueryFunction,
   QueryKey,
-  UseMutationOptions,
-  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
@@ -22,7 +18,6 @@ import type {
 import type {
   ConstituencyDetail,
   ConstituencyResult,
-  CreatePartyRequest,
   Election,
   ElectionSummary,
   GetConstituencyParams,
@@ -34,7 +29,7 @@ import type {
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
-import type { ErrorType , BodyType } from '../custom-fetch';
+import type { ErrorType } from '../custom-fetch';
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -215,7 +210,7 @@ export function useListElections<TData = Awaited<ReturnType<typeof listElections
 
 
 
-export const getGetElectionUrl = (id: number,) => {
+export const getGetElectionUrl = (id: string,) => {
 
 
 
@@ -226,7 +221,7 @@ export const getGetElectionUrl = (id: number,) => {
 /**
  * @summary Get an election by ID
  */
-export const getElection = async (id: number, options?: RequestInit): Promise<Election> => {
+export const getElection = async (id: string, options?: RequestInit): Promise<Election> => {
 
   return customFetch<Election>(getGetElectionUrl(id),
   {
@@ -241,14 +236,14 @@ export const getElection = async (id: number, options?: RequestInit): Promise<El
 
 
 
-export const getGetElectionQueryKey = (id: number,) => {
+export const getGetElectionQueryKey = (id: string,) => {
     return [
     `/api/elections/${id}`
     ] as const;
     }
 
 
-export const getGetElectionQueryOptions = <TData = Awaited<ReturnType<typeof getElection>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getElection>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetElectionQueryOptions = <TData = Awaited<ReturnType<typeof getElection>>, TError = ErrorType<void>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getElection>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -275,7 +270,7 @@ export type GetElectionQueryError = ErrorType<void>
  */
 
 export function useGetElection<TData = Awaited<ReturnType<typeof getElection>>, TError = ErrorType<void>>(
- id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getElection>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getElection>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
@@ -292,7 +287,7 @@ export function useGetElection<TData = Awaited<ReturnType<typeof getElection>>, 
 
 
 
-export const getGetElectionSummaryUrl = (id: number,) => {
+export const getGetElectionSummaryUrl = (id: string,) => {
 
 
 
@@ -303,7 +298,7 @@ export const getGetElectionSummaryUrl = (id: number,) => {
 /**
  * @summary Get high-level summary for an election (seat totals, turnout, registered voters)
  */
-export const getElectionSummary = async (id: number, options?: RequestInit): Promise<ElectionSummary> => {
+export const getElectionSummary = async (id: string, options?: RequestInit): Promise<ElectionSummary> => {
 
   return customFetch<ElectionSummary>(getGetElectionSummaryUrl(id),
   {
@@ -318,14 +313,14 @@ export const getElectionSummary = async (id: number, options?: RequestInit): Pro
 
 
 
-export const getGetElectionSummaryQueryKey = (id: number,) => {
+export const getGetElectionSummaryQueryKey = (id: string,) => {
     return [
     `/api/elections/${id}/summary`
     ] as const;
     }
 
 
-export const getGetElectionSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getElectionSummary>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getElectionSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetElectionSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getElectionSummary>>, TError = ErrorType<unknown>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getElectionSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -352,7 +347,7 @@ export type GetElectionSummaryQueryError = ErrorType<unknown>
  */
 
 export function useGetElectionSummary<TData = Awaited<ReturnType<typeof getElectionSummary>>, TError = ErrorType<unknown>>(
- id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getElectionSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getElectionSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
@@ -369,7 +364,7 @@ export function useGetElectionSummary<TData = Awaited<ReturnType<typeof getElect
 
 
 
-export const getGetElectionSeatBreakdownUrl = (id: number,) => {
+export const getGetElectionSeatBreakdownUrl = (id: string,) => {
 
 
 
@@ -380,7 +375,7 @@ export const getGetElectionSeatBreakdownUrl = (id: number,) => {
 /**
  * @summary Get seats won per party for the assembly diagram
  */
-export const getElectionSeatBreakdown = async (id: number, options?: RequestInit): Promise<PartySeatCount[]> => {
+export const getElectionSeatBreakdown = async (id: string, options?: RequestInit): Promise<PartySeatCount[]> => {
 
   return customFetch<PartySeatCount[]>(getGetElectionSeatBreakdownUrl(id),
   {
@@ -395,14 +390,14 @@ export const getElectionSeatBreakdown = async (id: number, options?: RequestInit
 
 
 
-export const getGetElectionSeatBreakdownQueryKey = (id: number,) => {
+export const getGetElectionSeatBreakdownQueryKey = (id: string,) => {
     return [
     `/api/elections/${id}/seat-breakdown`
     ] as const;
     }
 
 
-export const getGetElectionSeatBreakdownQueryOptions = <TData = Awaited<ReturnType<typeof getElectionSeatBreakdown>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getElectionSeatBreakdown>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetElectionSeatBreakdownQueryOptions = <TData = Awaited<ReturnType<typeof getElectionSeatBreakdown>>, TError = ErrorType<unknown>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getElectionSeatBreakdown>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -429,7 +424,7 @@ export type GetElectionSeatBreakdownQueryError = ErrorType<unknown>
  */
 
 export function useGetElectionSeatBreakdown<TData = Awaited<ReturnType<typeof getElectionSeatBreakdown>>, TError = ErrorType<unknown>>(
- id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getElectionSeatBreakdown>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getElectionSeatBreakdown>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
@@ -446,7 +441,7 @@ export function useGetElectionSeatBreakdown<TData = Awaited<ReturnType<typeof ge
 
 
 
-export const getGetElectionVoteShareUrl = (id: number,) => {
+export const getGetElectionVoteShareUrl = (id: string,) => {
 
 
 
@@ -457,7 +452,7 @@ export const getGetElectionVoteShareUrl = (id: number,) => {
 /**
  * @summary Get total votes and vote share per party
  */
-export const getElectionVoteShare = async (id: number, options?: RequestInit): Promise<PartyVoteShare[]> => {
+export const getElectionVoteShare = async (id: string, options?: RequestInit): Promise<PartyVoteShare[]> => {
 
   return customFetch<PartyVoteShare[]>(getGetElectionVoteShareUrl(id),
   {
@@ -472,14 +467,14 @@ export const getElectionVoteShare = async (id: number, options?: RequestInit): P
 
 
 
-export const getGetElectionVoteShareQueryKey = (id: number,) => {
+export const getGetElectionVoteShareQueryKey = (id: string,) => {
     return [
     `/api/elections/${id}/vote-share`
     ] as const;
     }
 
 
-export const getGetElectionVoteShareQueryOptions = <TData = Awaited<ReturnType<typeof getElectionVoteShare>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getElectionVoteShare>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetElectionVoteShareQueryOptions = <TData = Awaited<ReturnType<typeof getElectionVoteShare>>, TError = ErrorType<unknown>>(id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getElectionVoteShare>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -506,7 +501,7 @@ export type GetElectionVoteShareQueryError = ErrorType<unknown>
  */
 
 export function useGetElectionVoteShare<TData = Awaited<ReturnType<typeof getElectionVoteShare>>, TError = ErrorType<unknown>>(
- id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getElectionVoteShare>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ id: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getElectionVoteShare>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
@@ -600,77 +595,7 @@ export function useListParties<TData = Awaited<ReturnType<typeof listParties>>, 
 
 
 
-export const getCreatePartyUrl = () => {
-
-
-
-
-  return `/api/parties`
-}
-
-/**
- * @summary Add a new political party
- */
-export const createParty = async (createPartyRequest: CreatePartyRequest, options?: RequestInit): Promise<Party> => {
-
-  return customFetch<Party>(getCreatePartyUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(createPartyRequest)
-  }
-);}
-
-
-
-
-export const getCreatePartyMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createParty>>, TError,{data: BodyType<CreatePartyRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof createParty>>, TError,{data: BodyType<CreatePartyRequest>}, TContext> => {
-
-const mutationKey = ['createParty'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createParty>>, {data: BodyType<CreatePartyRequest>}> = (props) => {
-          const {data} = props ?? {};
-
-          return  createParty(data,requestOptions)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CreatePartyMutationResult = NonNullable<Awaited<ReturnType<typeof createParty>>>
-    export type CreatePartyMutationBody = BodyType<CreatePartyRequest>
-    export type CreatePartyMutationError = ErrorType<unknown>
-
-    /**
- * @summary Add a new political party
- */
-export const useCreateParty = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createParty>>, TError,{data: BodyType<CreatePartyRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof createParty>>,
-        TError,
-        {data: BodyType<CreatePartyRequest>},
-        TContext
-      > => {
-      return useMutation(getCreatePartyMutationOptions(options));
-    }
-
-export const getListConstituenciesUrl = (params?: ListConstituenciesParams,) => {
+export const getListConstituenciesUrl = (params: ListConstituenciesParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -688,7 +613,7 @@ export const getListConstituenciesUrl = (params?: ListConstituenciesParams,) => 
 /**
  * @summary List all constituencies with their results for an election
  */
-export const listConstituencies = async (params?: ListConstituenciesParams, options?: RequestInit): Promise<ConstituencyResult[]> => {
+export const listConstituencies = async (params: ListConstituenciesParams, options?: RequestInit): Promise<ConstituencyResult[]> => {
 
   return customFetch<ConstituencyResult[]>(getListConstituenciesUrl(params),
   {
@@ -710,7 +635,7 @@ export const getListConstituenciesQueryKey = (params?: ListConstituenciesParams,
     }
 
 
-export const getListConstituenciesQueryOptions = <TData = Awaited<ReturnType<typeof listConstituencies>>, TError = ErrorType<unknown>>(params?: ListConstituenciesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listConstituencies>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListConstituenciesQueryOptions = <TData = Awaited<ReturnType<typeof listConstituencies>>, TError = ErrorType<unknown>>(params: ListConstituenciesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listConstituencies>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -737,7 +662,7 @@ export type ListConstituenciesQueryError = ErrorType<unknown>
  */
 
 export function useListConstituencies<TData = Awaited<ReturnType<typeof listConstituencies>>, TError = ErrorType<unknown>>(
- params?: ListConstituenciesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listConstituencies>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params: ListConstituenciesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listConstituencies>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
@@ -754,7 +679,7 @@ export function useListConstituencies<TData = Awaited<ReturnType<typeof listCons
 
 
 
-export const getGetConstituencyUrl = (id: number,
+export const getGetConstituencyUrl = (id: string,
     params?: GetConstituencyParams,) => {
   const normalizedParams = new URLSearchParams();
 
@@ -773,7 +698,7 @@ export const getGetConstituencyUrl = (id: number,
 /**
  * @summary Get full result detail for a constituency
  */
-export const getConstituency = async (id: number,
+export const getConstituency = async (id: string,
     params?: GetConstituencyParams, options?: RequestInit): Promise<ConstituencyDetail> => {
 
   return customFetch<ConstituencyDetail>(getGetConstituencyUrl(id,params),
@@ -789,7 +714,7 @@ export const getConstituency = async (id: number,
 
 
 
-export const getGetConstituencyQueryKey = (id: number,
+export const getGetConstituencyQueryKey = (id: string,
     params?: GetConstituencyParams,) => {
     return [
     `/api/constituencies/${id}`, ...(params ? [params] : [])
@@ -797,7 +722,7 @@ export const getGetConstituencyQueryKey = (id: number,
     }
 
 
-export const getGetConstituencyQueryOptions = <TData = Awaited<ReturnType<typeof getConstituency>>, TError = ErrorType<void>>(id: number,
+export const getGetConstituencyQueryOptions = <TData = Awaited<ReturnType<typeof getConstituency>>, TError = ErrorType<void>>(id: string,
     params?: GetConstituencyParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getConstituency>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
@@ -825,7 +750,7 @@ export type GetConstituencyQueryError = ErrorType<void>
  */
 
 export function useGetConstituency<TData = Awaited<ReturnType<typeof getConstituency>>, TError = ErrorType<void>>(
- id: number,
+ id: string,
     params?: GetConstituencyParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getConstituency>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {

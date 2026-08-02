@@ -7,8 +7,8 @@
  */
 
 export interface ConstituencyResult {
-  id: number;
-  electionId: number;
+  id: string;
+  electionId: string;
   name: string;
   region: string;
   code: string;
@@ -21,7 +21,7 @@ export interface ConstituencyResult {
   scope: string;
   state: string;
   /** @nullable */
-  winningPartyId?: number | null;
+  winningPartyId?: string | null;
   /** @nullable */
   winningPartyName?: string | null;
   /** @nullable */

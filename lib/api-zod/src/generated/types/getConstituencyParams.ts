@@ -7,5 +7,5 @@
  */
 
 export type GetConstituencyParams = {
-electionId?: number;
+electionId?: string;
 };

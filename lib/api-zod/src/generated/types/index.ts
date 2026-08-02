@@ -9,7 +9,6 @@
 export * from './candidateResult';
 export * from './constituencyDetail';
 export * from './constituencyResult';
-export * from './createPartyRequest';
 export * from './election';
 export * from './electionSummary';
 export * from './getConstituencyParams';

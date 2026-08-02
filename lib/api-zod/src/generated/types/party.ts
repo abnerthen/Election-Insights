@@ -7,7 +7,7 @@
  */
 
 export interface Party {
-  id: number;
+  id: string;
   name: string;
   abbreviation: string;
   color: string;

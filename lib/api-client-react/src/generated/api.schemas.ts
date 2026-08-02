@@ -5,31 +5,21 @@
  * Election Results API
  * OpenAPI spec version: 0.1.0
  */
-export interface CreatePartyRequest {
-  name: string;
-  abbreviation: string;
-  color: string;
-  description?: string;
-}
-
 export interface HealthStatus {
   status: string;
 }
 
 export interface Election {
-  id: number;
+  id: string;
   name: string;
   date: string;
-  totalSeats: number;
-  /** declared | counting | pending */
-  status: string;
   scope: string;
   /** @nullable */
   state?: string | null;
 }
 
 export interface PartyContestedSeats {
-  partyId: number;
+  partyId: string;
   partyName: string;
   partyAbbreviation: string;
   partyColor: string;
@@ -37,7 +27,7 @@ export interface PartyContestedSeats {
 }
 
 export interface ElectionSummary {
-  electionId: number;
+  electionId: string;
   electionName: string;
   totalRegisteredVoters: number;
   totalVotesCast: number;
@@ -55,7 +45,7 @@ export interface ElectionSummary {
 }
 
 export interface PartySeatCount {
-  partyId: number;
+  partyId: string;
   partyName: string;
   partyAbbreviation: string;
   partyColor: string;
@@ -63,7 +53,7 @@ export interface PartySeatCount {
 }
 
 export interface PartyVoteShare {
-  partyId: number;
+  partyId: string;
   partyName: string;
   partyAbbreviation: string;
   partyColor: string;
@@ -72,7 +62,7 @@ export interface PartyVoteShare {
 }
 
 export interface Party {
-  id: number;
+  id: string;
   name: string;
   abbreviation: string;
   color: string;
@@ -81,8 +71,8 @@ export interface Party {
 }
 
 export interface ConstituencyResult {
-  id: number;
-  electionId: number;
+  id: string;
+  electionId: string;
   name: string;
   region: string;
   code: string;
@@ -95,7 +85,7 @@ export interface ConstituencyResult {
   scope: string;
   state: string;
   /** @nullable */
-  winningPartyId?: number | null;
+  winningPartyId?: string | null;
   /** @nullable */
   winningPartyName?: string | null;
   /** @nullable */
@@ -121,7 +111,7 @@ export interface ConstituencyResult {
 export interface CandidateResult {
   id: number;
   name: string;
-  partyId: number;
+  partyId: string;
   partyName: string;
   partyAbbreviation: string;
   partyColor: string;
@@ -133,7 +123,7 @@ export interface CandidateResult {
 }
 
 export interface ConstituencyDetail {
-  id: number;
+  id: string;
   name: string;
   region: string;
   code: string;
@@ -156,10 +146,10 @@ export interface ConstituencyDetail {
 }
 
 export type ListConstituenciesParams = {
-electionId?: number;
+electionId: string;
 };
 
 export type GetConstituencyParams = {
-electionId?: number;
+electionId?: string;
 };
 

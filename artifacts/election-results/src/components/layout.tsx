@@ -28,8 +28,8 @@ const MALAYSIAN_STATES = [
 
 export function Layout({ children, currentElectionId, onElectionChange }: {
   children: React.ReactNode;
-  currentElectionId: number | null;
-  onElectionChange: (id: number) => void;
+  currentElectionId: string | null;
+  onElectionChange: (id: string) => void;
 }) {
   const { data: elections, isLoading } = useListElections({ query: { queryKey: getListElectionsQueryKey() } });
 
@@ -37,14 +37,14 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
   const [scope, setScope] = useState<"federal" | "state">("federal");
   const [stateFilter, setStateFilter] = useState<string>("Johor");
 
-  const triggerElectionChange = (nextElectionId: number) => {
+  const triggerElectionChange = (nextElectionId: string) => {
     onElectionChange(nextElectionId);
 
     // Check if location matches /constituency/:id
-    const match = location.match(/^\/constituency\/(\d+)/);
+    const match = location.match(/^\/constituency\/([^/?]+)/);
     if (match) {
       const constituencyId = match[1];
-      setLocation(`/constituency/${constituencyId}?electionId=${nextElectionId}`);
+      setLocation(`/constituency/${constituencyId}?electionId=${encodeURIComponent(nextElectionId)}`);
     }
   };
 
@@ -171,8 +171,8 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
                 <div className="w-[240px] h-9 bg-secondary animate-pulse rounded-md" />
               ) : (
                 <Select
-                  value={currentElectionId ? currentElectionId.toString() : ""}
-                  onValueChange={(val) => triggerElectionChange(parseInt(val))}
+                  value={currentElectionId ?? ""}
+                  onValueChange={(val) => triggerElectionChange(val)}
                 >
                   <SelectTrigger className="w-[260px] bg-card border-border text-foreground text-sm font-bold h-9">
                     <SelectValue placeholder="Select Election" />
@@ -182,7 +182,7 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
                       ?.slice()
                       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                       .map((election) => (
-                        <SelectItem key={election.id} value={election.id.toString()}>
+                        <SelectItem key={election.id} value={election.id}>
                           {election.name} ({new Date(election.date).getFullYear()})
                         </SelectItem>
                       ))}

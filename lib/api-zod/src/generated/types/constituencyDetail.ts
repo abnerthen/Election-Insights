@@ -8,7 +8,7 @@
 import type { CandidateResult } from './candidateResult';
 
 export interface ConstituencyDetail {
-  id: number;
+  id: string;
   name: string;
   region: string;
   code: string;

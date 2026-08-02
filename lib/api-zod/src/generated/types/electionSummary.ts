@@ -8,7 +8,7 @@
 import type { PartyContestedSeats } from './partyContestedSeats';
 
 export interface ElectionSummary {
-  electionId: number;
+  electionId: string;
   electionName: string;
   totalRegisteredVoters: number;
   totalVotesCast: number;
