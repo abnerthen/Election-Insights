@@ -91,8 +91,12 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
     }
   };
 
-  // Show all elections in the dropdown
-  const displayedElections = elections || [];
+  // Only show elections matching the selected level (and, for state assembly, the selected state)
+  const displayedElections = (elections || []).filter((e) => {
+    if (e.scope !== scope) return false;
+    if (scope === "state" && e.state !== stateFilter) return false;
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans antialiased selection:bg-primary selection:text-primary-foreground">
