@@ -29,8 +29,22 @@ router.get("/constituencies", async (req, res) => {
       getSeatStateMap(),
     ]);
 
+    // Group state assembly seats by the parliamentary constituency containing
+    // them, but only when every seat in the election resolves — a partial map
+    // would render some rows under a federal seat and the rest under the
+    // state, which reads as broken. Older delimitations miss wholesale (their
+    // seat names differ), so those cleanly fall back to state-level grouping.
+    const districts =
+      decoded.type === "dun"
+        ? bySeat.map((s) => {
+            const { code, name, region } = parseSeatName(s.seat, decoded.state);
+            return getSeatDistrict(seatStates.get(code) ?? region, code, name);
+          })
+        : [];
+    const useDistricts = districts.length > 0 && districts.every((d) => d !== null);
+
     return res.json(
-      bySeat.map((s) => {
+      bySeat.map((s, i) => {
         const { code, name, region: fallbackRegion } = parseSeatName(s.seat, decoded.state);
         // `fallbackRegion` (from the query's `state` param) is only wrong when
         // that param was itself a national aggregate ("Malaysia"/"Semenanjung")
@@ -43,10 +57,7 @@ router.get("/constituencies", async (req, res) => {
         const isAggregateQuery = decoded.state === "Malaysia" || decoded.state === "Semenanjung";
         const stateName = isAggregateQuery ? (seatStates.get(code) ?? fallbackRegion) : fallbackRegion;
         const layout = getSeatLayout(stateName, code);
-        // For state assembly seats, group by the parliamentary constituency
-        // they fall under (where we have verified data for it) instead of
-        // just the whole state — falls back to the state name otherwise.
-        const district = decoded.type === "dun" ? getSeatDistrict(stateName, code) : null;
+        const district = useDistricts ? districts[i] : null;
         return {
           id: encodeConstituencyId(s.seat, stateName, s.date),
           electionId: electionIdParam,
