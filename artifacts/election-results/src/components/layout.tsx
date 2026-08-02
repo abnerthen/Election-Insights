@@ -13,17 +13,18 @@ import { Landmark, MapPin, ShieldAlert } from "lucide-react";
 
 const MALAYSIAN_STATES = [
   "Johor",
-  "Selangor",
-  "Penang",
   "Kedah",
   "Kelantan",
-  "Terengganu",
-  "Pahang",
-  "Negeri Sembilan",
   "Melaka",
+  "Negeri Sembilan",
+  "Pahang",
+  "Perak",
   "Perlis",
+  "Pulau Pinang",
   "Sabah",
-  "Sarawak"
+  "Sarawak",
+  "Selangor",
+  "Terengganu"
 ];
 
 export function Layout({ children, currentElectionId, onElectionChange }: {
@@ -115,7 +116,7 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
       <div className="bg-secondary/40 border-b border-border/60 py-3 shadow-md">
         <div className="container mx-auto px-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
 
-          {/* Level Toggle: Federal vs State
+          {/* Level Toggle: Federal vs State */}
           <div className="flex items-center gap-3">
             <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Level:</span>
             <ToggleGroup
@@ -126,15 +127,15 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
               }}
               className="bg-card p-1 border border-border rounded-lg inline-flex"
             >
-              <ToggleGroupItem 
-                value="federal" 
+              <ToggleGroupItem
+                value="federal"
                 className="px-4 py-2 text-xs font-extrabold uppercase tracking-wider rounded-md data-[state=on]:bg-amber-500 data-[state=on]:text-black text-foreground transition-all"
               >
                 <Landmark className="w-3.5 h-3.5 mr-1.5" />
                 Parliament
               </ToggleGroupItem>
-              <ToggleGroupItem 
-                value="state" 
+              <ToggleGroupItem
+                value="state"
                 className="px-4 py-2 text-xs font-extrabold uppercase tracking-wider rounded-md data-[state=on]:bg-amber-500 data-[state=on]:text-black text-foreground transition-all"
               >
                 <MapPin className="w-3.5 h-3.5 mr-1.5" />
@@ -142,12 +143,11 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
               </ToggleGroupItem>
             </ToggleGroup>
           </div>
-          */}
 
           {/* State Dropdown + Election Selection */}
           <div className="flex flex-wrap items-center gap-4">
 
-            {/* scope === "state" && (
+            {scope === "state" && (
               <div className="flex items-center gap-2">
                 <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">State:</span>
                 <Select value={stateFilter} onValueChange={handleStateChange}>
@@ -163,7 +163,7 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
                   </SelectContent>
                 </Select>
               </div>
-            ) */}
+            )}
 
             <div className="flex items-center gap-2">
               <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Election:</span>
