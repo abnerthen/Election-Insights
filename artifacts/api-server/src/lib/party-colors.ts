@@ -19,6 +19,13 @@ const PARTY_COLORS: Record<string, string> = {
   MIC: "#138808",
   GERAKAN: "#5aa0d8",
   WARISAN: "#f7941d",
+  // The pre-1973 Alliance is BN's direct predecessor — the same governing
+  // coalition, renamed — so it inherits BN's navy and the bloc stays one
+  // colour across GE-01..GE-15. Dissolved opposition blocs (PR, BA) are
+  // deliberately NOT mapped onto PH: those re-formed with materially
+  // different membership rather than being renamed, so they read better as
+  // their own colours and keep their hashed fallback.
+  PERIKATAN: "#000080",
 };
 
 function hashColor(seed: string): string {

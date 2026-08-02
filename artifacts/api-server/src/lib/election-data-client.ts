@@ -191,24 +191,45 @@ export const electionDataClient = {
     get<{ seats: SeatDropdownEntry[] }>("/seats/dropdown", {}, CATALOGUE_CACHE_TTL_MS).then((r) => r.seats),
 };
 
-let partyNameMapPromise: Promise<Map<string, string>> | null = null;
-let partyNameMapExpires = 0;
+export interface PartyNames {
+  /** e.g. "PAS" -> "Pan-Malaysian Islamic Party" */
+  party(acronym: string): string;
+  /** e.g. "PH" -> "Pakatan Harapan" */
+  coalition(acronym: string): string;
+}
 
-// Full party names (e.g. "Pakatan Harapan") for display — /elections/by_party
-// and /elections/by_seat only ever give the acronym.
-export function getPartyNameMap(): Promise<Map<string, string>> {
-  if (partyNameMapPromise && partyNameMapExpires > Date.now()) {
-    return partyNameMapPromise;
+let partyNamesPromise: Promise<PartyNames> | null = null;
+let partyNamesExpires = 0;
+
+// Full names for display — /elections/by_party and /elections/by_seat only
+// ever give acronyms. Keyed by type as well as acronym because the two
+// namespaces overlap: "PR" is both a party (Parti Rakyat, "Malayan People's
+// Party") and a coalition (Pakatan Rakyat). A flat acronym map lets whichever
+// the catalogue happens to list first shadow the other, which mislabelled
+// Pakatan Rakyat's 89 GE-13 seats as "Malayan People's Party".
+export function getPartyNameMap(): Promise<PartyNames> {
+  if (partyNamesPromise && partyNamesExpires > Date.now()) {
+    return partyNamesPromise;
   }
-  partyNameMapExpires = Date.now() + CATALOGUE_CACHE_TTL_MS;
-  partyNameMapPromise = electionDataClient.getPartiesDropdown().then((parties) => {
-    const map = new Map<string, string>();
-    for (const p of parties) {
-      if (!map.has(p.acronym)) map.set(p.acronym, p.name_en || p.acronym);
+  partyNamesExpires = Date.now() + CATALOGUE_CACHE_TTL_MS;
+  partyNamesPromise = electionDataClient.getPartiesDropdown().then((entries) => {
+    const byTypeAndAcronym = new Map<string, string>();
+    for (const p of entries) {
+      const key = `${p.type}::${p.acronym}`;
+      if (!byTypeAndAcronym.has(key)) byTypeAndAcronym.set(key, p.name_en || p.acronym);
     }
-    return map;
+    const lookup = (type: "party" | "coalition", acronym: string) =>
+      byTypeAndAcronym.get(`${type}::${acronym}`) ??
+      // Fall back across the other namespace rather than rendering a bare
+      // acronym when the catalogue only carries one of the two.
+      byTypeAndAcronym.get(`${type === "party" ? "coalition" : "party"}::${acronym}`) ??
+      acronym;
+    return {
+      party: (acronym: string) => lookup("party", acronym),
+      coalition: (acronym: string) => lookup("coalition", acronym),
+    };
   });
-  return partyNameMapPromise;
+  return partyNamesPromise;
 }
 
 let seatStateMapPromise: Promise<Map<string, string>> | null = null;

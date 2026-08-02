@@ -61,7 +61,7 @@ router.get("/constituencies", async (req, res) => {
           turnoutPercent: Math.round((s.voter_turnout_perc ?? 0) * 100) / 100,
           status: "declared",
           winningPartyId: s.party_uid,
-          winningPartyName: partyNames.get(s.party) ?? s.party,
+          winningPartyName: partyNames.party(s.party),
           // Grid/row views color by coalition (who governs), not individual
           // party — matches the hemicycle/vote-share grouping.
           winningPartyColor: getWinnerColor(s.party, s.coalition),
@@ -129,7 +129,7 @@ router.get("/constituencies/:id", async (req, res) => {
         id: i,
         name: c.name,
         partyId: c.party_uid,
-        partyName: partyNames.get(c.party) ?? c.party,
+        partyName: partyNames.party(c.party),
         partyAbbreviation: c.party,
         partyColor: getPartyColor(c.party),
         votes: c.votes,

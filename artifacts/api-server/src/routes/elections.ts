@@ -5,10 +5,19 @@ import {
   decodeElectionId,
   getPartyNameMap,
   type ElectionDropdownEntry,
+  type PartyByElection,
+  type PartyNames,
 } from "../lib/election-data-client";
 import { getPartyColor } from "../lib/party-colors";
 
 const router = Router();
+
+// After the coalition rollup a row's `party` field holds the coalition's
+// acronym, except for parties that stood alone, which keep their own — so
+// each has to be looked up in the matching namespace.
+function displayName(names: PartyNames, row: PartyByElection): string {
+  return row.coalition_uid === "000-ALONE" ? names.party(row.party) : names.coalition(row.party);
+}
 
 function toElectionName(entry: Pick<ElectionDropdownEntry, "state" | "election">): string {
   // "Malaysia" is the canonical whole-country aggregate and gets no suffix;
@@ -83,13 +92,13 @@ router.get("/elections/:id/summary", async (req, res) => {
       turnoutPercent: stats?.voter_turnout_perc ?? 0,
       seatsTotal,
       seatsDeclared,
-      leadingParty: hasLeader ? (partyNames.get(leading.party) ?? leading.party) : null,
+      leadingParty: hasLeader ? displayName(partyNames, leading) : null,
       leadingPartyColor: hasLeader ? getPartyColor(leading.party) : null,
       leadingPartySeats: hasLeader ? leading.seats_won : null,
       majorityThreshold,
       partyContestedSeats: byParty.map((p) => ({
         partyId: p.party_uid,
-        partyName: partyNames.get(p.party) ?? p.party,
+        partyName: displayName(partyNames, p),
         partyAbbreviation: p.party,
         partyColor: getPartyColor(p.party),
         seatsContested: p.seats_contested,
@@ -114,7 +123,7 @@ router.get("/elections/:id/seat-breakdown", async (req, res) => {
     return res.json(
       byParty.map((p) => ({
         partyId: p.party_uid,
-        partyName: partyNames.get(p.party) ?? p.party,
+        partyName: displayName(partyNames, p),
         partyAbbreviation: p.party,
         partyColor: getPartyColor(p.party),
         seatsWon: p.seats_won,
@@ -139,7 +148,7 @@ router.get("/elections/:id/vote-share", async (req, res) => {
     return res.json(
       byParty.map((p) => ({
         partyId: p.party_uid,
-        partyName: partyNames.get(p.party) ?? p.party,
+        partyName: displayName(partyNames, p),
         partyAbbreviation: p.party,
         partyColor: getPartyColor(p.party),
         totalVotes: p.votes,
