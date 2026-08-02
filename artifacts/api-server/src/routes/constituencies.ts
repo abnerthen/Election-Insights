@@ -8,7 +8,7 @@ import {
   getPartyNameMap,
   getSeatStateMap,
 } from "../lib/election-data-client";
-import { getPartyColor } from "../lib/party-colors";
+import { getPartyColor, getWinnerColor } from "../lib/party-colors";
 import { getSeatLayout } from "../lib/seat-layout";
 
 const router = Router();
@@ -51,7 +51,9 @@ router.get("/constituencies", async (req, res) => {
           status: "declared",
           winningPartyId: s.party_uid,
           winningPartyName: partyNames.get(s.party) ?? s.party,
-          winningPartyColor: getPartyColor(s.party),
+          // Grid/row views color by coalition (who governs), not individual
+          // party — matches the hemicycle/vote-share grouping.
+          winningPartyColor: getWinnerColor(s.party, s.coalition),
           winningPartyAbbreviation: s.party,
           winningCandidateName: s.name,
           // electiondata.my's by_seat endpoint gives the winning margin but not

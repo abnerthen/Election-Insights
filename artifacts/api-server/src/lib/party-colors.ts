@@ -34,3 +34,12 @@ function hashColor(seed: string): string {
 export function getPartyColor(acronym: string): string {
   return PARTY_COLORS[acronym.toUpperCase()] ?? hashColor(acronym);
 }
+
+// For seat-winner coloring (constituency grid/row views): use the coalition's
+// color so seats read as "who governs" at a glance, the same way the
+// hemicycle/vote-share are grouped. Parties that contested without a
+// coalition ("ALONE" — independents, but also solo parties like WARISAN)
+// keep their own color instead of sharing one generic "ALONE" color.
+export function getWinnerColor(party: string, coalition: string): string {
+  return coalition === "ALONE" ? getPartyColor(party) : getPartyColor(coalition);
+}
