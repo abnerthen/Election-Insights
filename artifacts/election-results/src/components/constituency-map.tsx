@@ -169,7 +169,14 @@ export function ConstituencyMap({ constituencies }: ConstituencyMapProps) {
 }
 
 // ── 2. Row-by-Region View Component ────────────────────────────────────────
-export function ConstituencyRowView({ constituencies }: ConstituencyMapProps) {
+export function ConstituencyRowView({
+  constituencies,
+  onRegionClick,
+}: ConstituencyMapProps & {
+  // When provided, region headings become links that narrow the dashboard to
+  // that region (used to drill from a national election into one state).
+  onRegionClick?: (region: string) => void;
+}) {
   const [, setLocation] = useLocation();
 
   // Group by region
@@ -208,9 +215,20 @@ export function ConstituencyRowView({ constituencies }: ConstituencyMapProps) {
           return (
             <div key={regionName} className="flex flex-col sm:flex-row sm:items-center gap-3 py-0">
               {/* Region name label */}
-              <div className="w-full sm:w-36 flex-shrink-0 text-xs font-bold uppercase tracking-wider text-muted-foreground truncate">
-                {regionName}
-              </div>
+              {onRegionClick ? (
+                <button
+                  type="button"
+                  onClick={() => onRegionClick(regionName)}
+                  title={`View ${regionName} results`}
+                  className="w-full sm:w-36 flex-shrink-0 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground truncate hover:text-amber-500 hover:underline underline-offset-4 transition-colors cursor-pointer"
+                >
+                  {regionName}
+                </button>
+              ) : (
+                <div className="w-full sm:w-36 flex-shrink-0 text-xs font-bold uppercase tracking-wider text-muted-foreground truncate">
+                  {regionName}
+                </div>
+              )}
 
               {/* Constituencies blocks */}
               <div className="flex flex-wrap gap-1.5">

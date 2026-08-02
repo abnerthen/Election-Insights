@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { useGetElectionSummary, getGetElectionSummaryQueryKey,
   useGetElectionSeatBreakdown, getGetElectionSeatBreakdownQueryKey,
   useListConstituencies, getListConstituenciesQueryKey,
   useGetElectionVoteShare, getGetElectionVoteShareQueryKey,
   useGetElection, getGetElectionQueryKey,
-  useGetConstituency, getGetConstituencyQueryKey
+  useGetConstituency, getGetConstituencyQueryKey,
+  useListElections, getListElectionsQueryKey
 } from "@workspace/api-client-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SeatDiagram } from "@/components/seat-diagram";
@@ -11,28 +13,35 @@ import { GaugeCard } from "@/components/gauge-card";
 import { PieChartCard } from "@/components/pie-chart-card";
 import { ConstituencyMap, ConstituencyRowView } from "@/components/constituency-map";
 
-export function HomePage({ currentElectionId }: { currentElectionId: string | null }) {
-  if (!currentElectionId) {
-    return <div className="p-8 text-center text-muted-foreground">Select an election to view results.</div>;
-  }
+export function HomePage({ currentElectionId, onElectionChange }: {
+  currentElectionId: string | null;
+  onElectionChange: (id: string) => void;
+}) {
+  // Every hook below must run on every render — including before an election
+  // is picked — so the "select an election" guard lives after them, not above.
+  const electionId = currentElectionId ?? "";
 
-  const { data: election } = useGetElection(currentElectionId, {
-    query: { enabled: !!currentElectionId, queryKey: getGetElectionQueryKey(currentElectionId), refetchInterval: 5000 }
+  const { data: election } = useGetElection(electionId, {
+    query: { enabled: !!currentElectionId, queryKey: getGetElectionQueryKey(electionId), refetchInterval: 5000 }
   });
 
-  const { data: summary, isLoading: loadingSummary } = useGetElectionSummary(currentElectionId, {
-    query: { enabled: !!currentElectionId, queryKey: getGetElectionSummaryQueryKey(currentElectionId), refetchInterval: 5000 }
+  const { data: summary, isLoading: loadingSummary } = useGetElectionSummary(electionId, {
+    query: { enabled: !!currentElectionId, queryKey: getGetElectionSummaryQueryKey(electionId), refetchInterval: 5000 }
   });
-  const { data: seatBreakdown, isLoading: loadingSeats } = useGetElectionSeatBreakdown(currentElectionId, {
-    query: { enabled: !!currentElectionId, queryKey: getGetElectionSeatBreakdownQueryKey(currentElectionId), refetchInterval: 5000 }
+  const { data: seatBreakdown, isLoading: loadingSeats } = useGetElectionSeatBreakdown(electionId, {
+    query: { enabled: !!currentElectionId, queryKey: getGetElectionSeatBreakdownQueryKey(electionId), refetchInterval: 5000 }
   });
   const { data: constituencies, isLoading: loadingConstituencies } = useListConstituencies(
-    { electionId: currentElectionId },
-    { query: { enabled: !!currentElectionId, queryKey: getListConstituenciesQueryKey({ electionId: currentElectionId }), refetchInterval: 5000 } }
+    { electionId },
+    { query: { enabled: !!currentElectionId, queryKey: getListConstituenciesQueryKey({ electionId }), refetchInterval: 5000 } }
   );
-  const { data: voteShare } = useGetElectionVoteShare(currentElectionId, {
-    query: { enabled: !!currentElectionId, queryKey: getGetElectionVoteShareQueryKey(currentElectionId), refetchInterval: 5000 }
+  const { data: voteShare } = useGetElectionVoteShare(electionId, {
+    query: { enabled: !!currentElectionId, queryKey: getGetElectionVoteShareQueryKey(electionId), refetchInterval: 5000 }
   });
+  const { data: elections } = useListElections({ query: { queryKey: getListElectionsQueryKey() } });
+  // Controlled so the chosen view survives the loading state between
+  // elections — drilling into a state from Row View should land in Row View.
+  const [activeView, setActiveView] = useState("seats");
 
   // Find the seat with the slimmest majority among declared constituencies
   const declaredConstituencies = constituencies?.filter(c => c.status === "declared" && c.margin !== null) ?? [];
@@ -44,6 +53,10 @@ export function HomePage({ currentElectionId }: { currentElectionId: string | nu
     query: { enabled: !!slimmestSeat, queryKey: getGetConstituencyQueryKey(slimmestSeat?.id ?? "", { electionId: currentElectionId ?? undefined }), refetchInterval: 5000 }
   });
 
+  if (!currentElectionId) {
+    return <div className="p-8 text-center text-muted-foreground">Select an election to view results.</div>;
+  }
+
   if (loadingSummary || loadingSeats || loadingConstituencies) {
     return (
       <div className="h-[60vh] flex items-center justify-center">
@@ -53,6 +66,19 @@ export function HomePage({ currentElectionId }: { currentElectionId: string | nu
   }
 
   const isJohorState = election?.scope === "state" && election?.state === "Johor";
+
+  // A national general election's Row View groups seats by state, and each of
+  // those states has its own slice of the same election to drill into. Any
+  // other election is already as narrow as it gets, so its rows aren't links.
+  const canDrillIntoState = election?.scope === "federal" && election.state === "Malaysia";
+  const drillIntoState = canDrillIntoState
+    ? (stateName: string) => {
+        const target = elections?.find(
+          (e) => e.scope === "federal" && e.state === stateName && e.date === election.date
+        );
+        if (target) onElectionChange(target.id);
+      }
+    : undefined;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -222,7 +248,7 @@ export function HomePage({ currentElectionId }: { currentElectionId: string | nu
       )}
 
       {/* Main Views */}
-      <Tabs defaultValue="seats" className="w-full">
+      <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
         <div className="flex justify-center mb-8">
           <TabsList className="bg-secondary/40 p-1 rounded-md grid grid-cols-3 w-96 border border-border/40">
             <TabsTrigger value="seats" className="font-bold tracking-wider uppercase text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
@@ -327,7 +353,9 @@ export function HomePage({ currentElectionId }: { currentElectionId: string | nu
             <h2 className="text-center font-serif text-2xl mb-8 uppercase tracking-widest text-muted-foreground">
               Regional Seat Breakdown
             </h2>
-            {constituencies && <ConstituencyRowView constituencies={constituencies} />}
+            {constituencies && (
+              <ConstituencyRowView constituencies={constituencies} onRegionClick={drillIntoState} />
+            )}
           </div>
         </TabsContent>
       </Tabs>

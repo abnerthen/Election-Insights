@@ -9,7 +9,13 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Landmark, MapPin, ShieldAlert } from "lucide-react";
+import { Landmark, MapPin, ShieldAlert, X } from "lucide-react";
+
+// electiondata.my's whole-country aggregate. Federal elections also have a
+// per-state row (the same GE, narrowed to one state's seats) plus a
+// "Semenanjung" regional aggregate — those are drill-downs, not separate
+// elections, so they're reached from Row View rather than the dropdown.
+const NATIONAL_SCOPE = "Malaysia";
 
 const MALAYSIAN_STATES = [
   "Johor",
@@ -66,10 +72,12 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
     if (!elections) return;
     setScope(newScope);
 
-    // Find the most recent election for the new scope
+    // Find the most recent election for the new scope. Federal elections have
+    // one row per state on top of the national one, all sharing a date, so
+    // pick the national row explicitly rather than relying on list order.
     const filtered = elections.filter(e =>
       newScope === "federal"
-        ? e.scope === "federal"
+        ? e.scope === "federal" && e.state === NATIONAL_SCOPE
         : e.scope === "state" && e.state === stateFilter
     );
 
@@ -91,12 +99,30 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
     }
   };
 
-  // Only show elections matching the selected level (and, for state assembly, the selected state)
+  // Only show elections matching the selected level. Under Parliament that
+  // means the national general elections only; under State Assembly, the
+  // selected state's elections.
   const displayedElections = (elections || []).filter((e) => {
     if (e.scope !== scope) return false;
-    if (scope === "state" && e.state !== stateFilter) return false;
-    return true;
+    if (scope === "state") return e.state === stateFilter;
+    return e.state === NATIONAL_SCOPE;
   });
+
+  // Viewing one state's slice of a general election (reached by clicking a
+  // state in Row View). The dropdown keeps showing which GE we're in, and the
+  // chip below shows/clears the state we've drilled into.
+  const drilledIntoState =
+    activeElection?.scope === "federal" && activeElection.state !== NATIONAL_SCOPE
+      ? activeElection.state
+      : null;
+  const nationalElection = drilledIntoState
+    ? elections?.find(
+        (e) => e.scope === "federal" && e.state === NATIONAL_SCOPE && e.date === activeElection!.date
+      )
+    : undefined;
+  const selectedElectionId = drilledIntoState
+    ? nationalElection?.id ?? ""
+    : currentElectionId ?? "";
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans antialiased selection:bg-primary selection:text-primary-foreground">
@@ -175,7 +201,7 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
                 <div className="w-[240px] h-9 bg-secondary animate-pulse rounded-md" />
               ) : (
                 <Select
-                  value={currentElectionId ?? ""}
+                  value={selectedElectionId}
                   onValueChange={(val) => triggerElectionChange(val)}
                 >
                   <SelectTrigger className="w-[260px] bg-card border-border text-foreground text-sm font-bold h-9">
@@ -194,6 +220,18 @@ export function Layout({ children, currentElectionId, onElectionChange }: {
                 </Select>
               )}
             </div>
+
+            {drilledIntoState && nationalElection && (
+              <button
+                type="button"
+                onClick={() => triggerElectionChange(nationalElection.id)}
+                title="Back to all-Malaysia results"
+                className="flex items-center gap-1.5 h-9 px-3 rounded-md bg-amber-500/15 border border-amber-500/40 text-amber-600 dark:text-amber-400 text-sm font-bold hover:bg-amber-500/25 transition-colors"
+              >
+                {drilledIntoState}
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
 
           </div>
         </div>
