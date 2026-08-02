@@ -156,6 +156,34 @@ function mergePartyRows(rows: PartyByElection[]): PartyByElection[] {
   return [...merged.values()];
 }
 
+// Rolls individual parties up into their coalition (e.g. PAS + BERSATU -> PN,
+// PBB + PRS + PDP -> GPS) since that's what actually determines who can form
+// a government. Parties that contested without a coalition (coalition_uid
+// "000-ALONE" — genuine independents, but also named parties like WARISAN
+// that ran solo) are NOT merged together; each keeps its own row, since
+// "ALONE" isn't a real shared political identity.
+export function aggregateByCoalition(rows: PartyByElection[]): PartyByElection[] {
+  const groups = new Map<string, PartyByElection>();
+  for (const row of rows) {
+    const isAlone = row.coalition_uid === "000-ALONE";
+    const key = isAlone ? row.party_uid : row.coalition_uid;
+    const existing = groups.get(key);
+    if (!existing) {
+      groups.set(key, { ...row, party_uid: key, party: isAlone ? row.party : row.coalition });
+      continue;
+    }
+    existing.seats_contested += row.seats_contested;
+    existing.seats_won += row.seats_won;
+    existing.votes += row.votes;
+  }
+  for (const g of groups.values()) {
+    g.seats_contested_perc = g.seats_total > 0 ? (g.seats_contested / g.seats_total) * 100 : 0;
+    g.seats_won_perc = g.seats_total > 0 ? (g.seats_won / g.seats_total) * 100 : 0;
+    g.votes_perc = g.votes_total > 0 ? (g.votes / g.votes_total) * 100 : 0;
+  }
+  return [...groups.values()];
+}
+
 export const electionDataClient = {
   getElectionsDropdown: () =>
     get<{ elections: ElectionDropdownEntry[] }>("/elections/dropdown", {}, CATALOGUE_CACHE_TTL_MS).then(
@@ -163,7 +191,7 @@ export const electionDataClient = {
     ),
   getElectionsByParty: (state: string, election: string) =>
     get<{ by_party: PartyByElection[] }>("/elections/by_party", { state, election }).then((r) =>
-      mergePartyRows(r.by_party)
+      aggregateByCoalition(mergePartyRows(r.by_party))
     ),
   getElectionsBySeat: (state: string, election: string) =>
     get<{ by_seat: SeatByElection[] }>("/elections/by_seat", { state, election }).then((r) => r.by_seat),
