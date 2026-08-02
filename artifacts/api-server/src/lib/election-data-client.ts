@@ -204,6 +204,13 @@ let seatStateMapExpires = 0;
 // for a national-scope query), not each seat's actual home state. /seats/dropdown
 // (the master roster of currently-existing seats) always includes a ", <state>"
 // suffix on `seat`, so use it to build an accurate code -> state map.
+//
+// Only parlimen (federal) codes go in this map: they're globally unique
+// (P.001-P.222, never repeated), unlike dun codes, which restart at N.01 in
+// every state — a code-only map keyed across both types would silently
+// resolve a dun code to whichever state's matching code happens to be last
+// in the roster. Callers should only need this for the federal-aggregate
+// case anyway (state assembly queries always specify one real state already).
 export function getSeatStateMap(): Promise<Map<string, string>> {
   if (seatStateMapPromise && seatStateMapExpires > Date.now()) {
     return seatStateMapPromise;
@@ -212,6 +219,7 @@ export function getSeatStateMap(): Promise<Map<string, string>> {
   seatStateMapPromise = electionDataClient.getSeatsDropdown().then((seats) => {
     const map = new Map<string, string>();
     for (const s of seats) {
+      if (s.type !== "parlimen") continue;
       const commaIdx = s.seat.lastIndexOf(", ");
       if (commaIdx === -1) continue;
       const code = s.seat.slice(0, commaIdx).split(" ")[0];
