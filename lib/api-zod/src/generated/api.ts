@@ -21,11 +21,9 @@ export const HealthCheckResponse = zod.object({
  * @summary List all elections
  */
 export const ListElectionsResponseItem = zod.object({
-  "id": zod.number(),
+  "id": zod.string(),
   "name": zod.string(),
   "date": zod.string(),
-  "totalSeats": zod.number(),
-  "status": zod.string().describe('declared | counting | pending'),
   "scope": zod.string(),
   "state": zod.string().nullish()
 })
@@ -36,15 +34,13 @@ export const ListElectionsResponse = zod.array(ListElectionsResponseItem)
  * @summary Get an election by ID
  */
 export const GetElectionParams = zod.object({
-  "id": zod.coerce.number()
+  "id": zod.coerce.string()
 })
 
 export const GetElectionResponse = zod.object({
-  "id": zod.number(),
+  "id": zod.string(),
   "name": zod.string(),
   "date": zod.string(),
-  "totalSeats": zod.number(),
-  "status": zod.string().describe('declared | counting | pending'),
   "scope": zod.string(),
   "state": zod.string().nullish()
 })
@@ -54,11 +50,11 @@ export const GetElectionResponse = zod.object({
  * @summary Get high-level summary for an election (seat totals, turnout, registered voters)
  */
 export const GetElectionSummaryParams = zod.object({
-  "id": zod.coerce.number()
+  "id": zod.coerce.string()
 })
 
 export const GetElectionSummaryResponse = zod.object({
-  "electionId": zod.number(),
+  "electionId": zod.string(),
   "electionName": zod.string(),
   "totalRegisteredVoters": zod.number(),
   "totalVotesCast": zod.number(),
@@ -70,7 +66,7 @@ export const GetElectionSummaryResponse = zod.object({
   "leadingPartySeats": zod.number().nullish(),
   "majorityThreshold": zod.number().optional(),
   "partyContestedSeats": zod.array(zod.object({
-  "partyId": zod.number(),
+  "partyId": zod.string(),
   "partyName": zod.string(),
   "partyAbbreviation": zod.string(),
   "partyColor": zod.string(),
@@ -83,11 +79,11 @@ export const GetElectionSummaryResponse = zod.object({
  * @summary Get seats won per party for the assembly diagram
  */
 export const GetElectionSeatBreakdownParams = zod.object({
-  "id": zod.coerce.number()
+  "id": zod.coerce.string()
 })
 
 export const GetElectionSeatBreakdownResponseItem = zod.object({
-  "partyId": zod.number(),
+  "partyId": zod.string(),
   "partyName": zod.string(),
   "partyAbbreviation": zod.string(),
   "partyColor": zod.string(),
@@ -100,11 +96,11 @@ export const GetElectionSeatBreakdownResponse = zod.array(GetElectionSeatBreakdo
  * @summary Get total votes and vote share per party
  */
 export const GetElectionVoteShareParams = zod.object({
-  "id": zod.coerce.number()
+  "id": zod.coerce.string()
 })
 
 export const GetElectionVoteShareResponseItem = zod.object({
-  "partyId": zod.number(),
+  "partyId": zod.string(),
   "partyName": zod.string(),
   "partyAbbreviation": zod.string(),
   "partyColor": zod.string(),
@@ -118,7 +114,7 @@ export const GetElectionVoteShareResponse = zod.array(GetElectionVoteShareRespon
  * @summary List all parties
  */
 export const ListPartiesResponseItem = zod.object({
-  "id": zod.number(),
+  "id": zod.string(),
   "name": zod.string(),
   "abbreviation": zod.string(),
   "color": zod.string(),
@@ -128,34 +124,15 @@ export const ListPartiesResponse = zod.array(ListPartiesResponseItem)
 
 
 /**
- * @summary Add a new political party
- */
-export const CreatePartyBody = zod.object({
-  "name": zod.string(),
-  "abbreviation": zod.string(),
-  "color": zod.string(),
-  "description": zod.string().optional()
-})
-
-export const CreatePartyResponse = zod.object({
-  "id": zod.number(),
-  "name": zod.string(),
-  "abbreviation": zod.string(),
-  "color": zod.string(),
-  "description": zod.string().nullish()
-})
-
-
-/**
  * @summary List all constituencies with their results for an election
  */
 export const ListConstituenciesQueryParams = zod.object({
-  "electionId": zod.coerce.number().optional()
+  "electionId": zod.coerce.string()
 })
 
 export const ListConstituenciesResponseItem = zod.object({
-  "id": zod.number(),
-  "electionId": zod.number(),
+  "id": zod.string(),
+  "electionId": zod.string(),
   "name": zod.string(),
   "region": zod.string(),
   "code": zod.string(),
@@ -166,7 +143,7 @@ export const ListConstituenciesResponseItem = zod.object({
   "status": zod.string().describe('declared | counting | pending'),
   "scope": zod.string(),
   "state": zod.string(),
-  "winningPartyId": zod.number().nullish(),
+  "winningPartyId": zod.string().nullish(),
   "winningPartyName": zod.string().nullish(),
   "winningPartyColor": zod.string().nullish(),
   "winningPartyAbbreviation": zod.string().nullish(),
@@ -185,15 +162,15 @@ export const ListConstituenciesResponse = zod.array(ListConstituenciesResponseIt
  * @summary Get full result detail for a constituency
  */
 export const GetConstituencyParams = zod.object({
-  "id": zod.coerce.number()
+  "id": zod.coerce.string()
 })
 
 export const GetConstituencyQueryParams = zod.object({
-  "electionId": zod.coerce.number().optional()
+  "electionId": zod.coerce.string().optional()
 })
 
 export const GetConstituencyResponse = zod.object({
-  "id": zod.number(),
+  "id": zod.string(),
   "name": zod.string(),
   "region": zod.string(),
   "code": zod.string(),
@@ -211,7 +188,7 @@ export const GetConstituencyResponse = zod.object({
   "candidates": zod.array(zod.object({
   "id": zod.number(),
   "name": zod.string(),
-  "partyId": zod.number(),
+  "partyId": zod.string(),
   "partyName": zod.string(),
   "partyAbbreviation": zod.string(),
   "partyColor": zod.string(),

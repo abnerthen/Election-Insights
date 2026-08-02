@@ -7,5 +7,5 @@
  */
 
 export type ListConstituenciesParams = {
-electionId?: number;
+electionId: string;
 };

@@ -1,6 +1,6 @@
-# Election Insights - Interactive Dashboard & Administration Portal
+# Election Insights - Interactive Election Results Dashboard
 
-An elegant, real-time, interactive election results visualization platform designed as a modern web application. It features a public-facing dashboard with rich aesthetics (parliamentary hemicycles, turnout gauges, dynamic maps, regional rows, and slimmest majority reports) and a robust administration portal for secure results entry and data validation.
+An elegant, real-time, interactive election results visualization platform designed as a modern web application. It features a public-facing dashboard with rich aesthetics (parliamentary hemicycles, turnout gauges, dynamic maps, regional rows, and slimmest majority reports), sourced live from the [ElectionData.MY](https://electiondata.my) public API — no database required.
 
 ---
 
@@ -17,14 +17,6 @@ An elegant, real-time, interactive election results visualization platform desig
 * **Vote Share Analysis**: Horizontal progress bar charts with high-contrast text overlay (utilizing CSS `mix-blend-mode: difference` and `isolation: isolate` to invert character colors dynamically depending on the background, solving visibility on light backgrounds).
 * **Auto-Polling**: React Query handles automatic background updates of all live statistics every 5 seconds.
 
-### Admin Portal
-* **Constituency Results Form**: Enter candidate vote counts and spoilt votes for each seat.
-* **Advanced Data Integrity Constraints**:
-  * **Single Candidate Per Party**: Enforces that a political party (except Independents) can only nominate one candidate per constituency. Managed pre-emptively on the API and backed up by database constraints.
-  * **Unique Independent Names**: Validates that multiple independent candidates standing in the same seat do not share duplicate names (case-insensitive, trimmed).
-  * **Voter Turnout Cap**: Prevents saving if the sum of valid candidate votes and spoilt votes exceeds the total number of registered voters.
-* **Robust Error Handling**: Drizzle ORM and Postgres database constraint validation errors are caught and piped directly to the admin interface toast notifications rather than showing generic internal server errors.
-
 ---
 
 ## 🛠 Tech Stack
@@ -39,13 +31,9 @@ An elegant, real-time, interactive election results visualization platform desig
 
 ### Backend API Server
 * **Server**: Node.js & Express
-* **Database client**: Drizzle ORM
+* **Data source**: Proxies and reshapes the [ElectionData.MY API](https://electiondata.my/openapi) — holds the API key server-side, never exposed to the browser
 * **Logging**: Pino Logger
 * **API Spec**: OpenAPI 3.0 with Orval automatic client hook generation
-
-### Database
-* **Database Engine**: PostgreSQL
-* **Schema Migration**: Drizzle Kit
 
 ---
 
@@ -54,7 +42,7 @@ An elegant, real-time, interactive election results visualization platform desig
 ### Prerequisites
 * **Node.js** (v18 or higher recommended)
 * **pnpm** package manager (enforced in `package.json`)
-* **PostgreSQL** instance running locally
+* A free ElectionData.MY API key — generate one from their [API Console](https://electiondata.my/console)
 
 ### Step 1: Clone and Install Dependencies
 Navigate to the root directory and install packages:
@@ -62,27 +50,12 @@ Navigate to the root directory and install packages:
 pnpm install
 ```
 
-### Step 2: Database Setup & Migration
-1. Ensure your local PostgreSQL server is running.
-2. Define the `DATABASE_URL` environment variable:
-   ```bash
-   export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/elections"
-   ```
-3. Run Drizzle schema migrations to initialize tables and relationships:
-   ```bash
-   npx pnpm --filter @workspace/db run push
-   ```
-4. Run the seed script to populate initial setup data (e.g. parties, constituencies, and elections):
-   ```bash
-   npx pnpm --filter @workspace/db run seed
-   ```
-
-### Step 3: Run the Development Servers
+### Step 2: Run the Development Servers
 Open two terminal windows in the workspace root:
 
 * **Terminal 1: Start the API backend server**
   ```bash
-  DATABASE_URL="postgresql://postgres:postgres@localhost:5432/elections" PORT=5005 npx pnpm --filter @workspace/api-server run dev
+  ELECTION_DATA_API_KEY="your-electiondata-my-key" PORT=5005 npx pnpm --filter @workspace/api-server run dev
   ```
 * **Terminal 2: Start the frontend dashboard app**
   ```bash
@@ -91,7 +64,6 @@ Open two terminal windows in the workspace root:
 
 Once running, navigate to:
 * **Public Dashboard**: `http://localhost:3000`
-* **Admin Portal**: `http://localhost:3000/admin`
 
 ---
 
@@ -99,9 +71,9 @@ Once running, navigate to:
 
 Below are recommended roadmap features that would elevate the project's capabilities:
 
-1. **Real-time WebSockets / SSE**: Replace the 5-second polling system with a real-time WebSocket connection (or Server-Sent Events) to instantly stream results saved in the admin portal to active client screens.
-2. **Interactive Geographical Map (GeoJSON)**: Integrate a geographic visualization layer using SVG/Leaflet with GeoJSON data to allow users to hover over and click actual colored constituency boundaries on a physical map.
-3. **Historic Comparison & Swing Trends**: Introduce historical datasets (e.g., comparison with the previous general election) to calculate and visualize vote swings, seat changes, and gain/loss shifts for each party.
+1. **Real-time WebSockets / SSE**: Replace the 5-second polling system with a real-time WebSocket connection (or Server-Sent Events) for instant updates on election night.
+2. **Interactive Geographical Map (GeoJSON)**: Integrate a geographic visualization layer using SVG/Leaflet with GeoJSON data from ElectionData.MY's open data lake to allow users to hover over and click actual colored constituency boundaries on a physical map.
+3. **Historic Comparison & Swing Trends**: Use ElectionData.MY's full historical catalogue (1955–present) to calculate and visualize vote swings, seat changes, and gain/loss shifts for each party between elections.
 4. **Detailed Swing Analytics Charting**: Introduce stacked area charts showing turnout time-series data or margins over time to track election-day reporting trends.
 
 ## License

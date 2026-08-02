@@ -7,7 +7,7 @@
  */
 
 export interface PartyVoteShare {
-  partyId: number;
+  partyId: string;
   partyName: string;
   partyAbbreviation: string;
   partyColor: string;

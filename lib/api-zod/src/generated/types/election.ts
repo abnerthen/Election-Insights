@@ -7,12 +7,9 @@
  */
 
 export interface Election {
-  id: number;
+  id: string;
   name: string;
   date: string;
-  totalSeats: number;
-  /** declared | counting | pending */
-  status: string;
   scope: string;
   /** @nullable */
   state?: string | null;

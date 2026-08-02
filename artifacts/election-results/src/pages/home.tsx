@@ -3,7 +3,6 @@ import { useGetElectionSummary, getGetElectionSummaryQueryKey,
   useListConstituencies, getListConstituenciesQueryKey,
   useGetElectionVoteShare, getGetElectionVoteShareQueryKey,
   useGetElection, getGetElectionQueryKey,
-  useListParties, getListPartiesQueryKey,
   useGetConstituency, getGetConstituencyQueryKey
 } from "@workspace/api-client-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,7 +11,7 @@ import { GaugeCard } from "@/components/gauge-card";
 import { PieChartCard } from "@/components/pie-chart-card";
 import { ConstituencyMap, ConstituencyRowView } from "@/components/constituency-map";
 
-export function HomePage({ currentElectionId }: { currentElectionId: number | null }) {
+export function HomePage({ currentElectionId }: { currentElectionId: string | null }) {
   if (!currentElectionId) {
     return <div className="p-8 text-center text-muted-foreground">Select an election to view results.</div>;
   }
@@ -41,8 +40,8 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
     ? [...declaredConstituencies].sort((a, b) => (a.margin ?? 0) - (b.margin ?? 0))[0]
     : null;
 
-  const { data: slimmestSeatDetails } = useGetConstituency(slimmestSeat?.id ?? 0, { electionId: currentElectionId ?? undefined }, {
-    query: { enabled: !!slimmestSeat, queryKey: getGetConstituencyQueryKey(slimmestSeat?.id ?? 0, { electionId: currentElectionId ?? undefined }), refetchInterval: 5000 }
+  const { data: slimmestSeatDetails } = useGetConstituency(slimmestSeat?.id ?? "", { electionId: currentElectionId ?? undefined }, {
+    query: { enabled: !!slimmestSeat, queryKey: getGetConstituencyQueryKey(slimmestSeat?.id ?? "", { electionId: currentElectionId ?? undefined }), refetchInterval: 5000 }
   });
 
   if (loadingSummary || loadingSeats || loadingConstituencies) {
@@ -140,7 +139,7 @@ export function HomePage({ currentElectionId }: { currentElectionId: number | nu
                         ? (cand.votes / slimmestSeatDetails.votesCast) * 100
                         : 0;
                       return (
-                        <div key={cand.candidateId} className="flex items-center gap-2 text-xs">
+                        <div key={cand.id} className="flex items-center gap-2 text-xs">
                           <div className="w-8 font-bold text-muted-foreground truncate">{cand.partyAbbreviation}</div>
                           <div className="flex-1 bg-secondary/40 h-3 rounded overflow-hidden relative" style={{ isolation: "isolate" }}>
                             <div className="h-full rounded" style={{ width: `${share}%`, backgroundColor: cand.partyColor }} />

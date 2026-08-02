@@ -4,11 +4,10 @@ import { useGetConstituency, getGetConstituencyQueryKey } from "@workspace/api-c
 
 export function ConstituencyPage() {
   const params = useParams();
-  const id = parseInt(params.id || "0");
+  const id = params.id ?? "";
 
   const searchParams = new URLSearchParams(window.location.search);
-  const electionIdVal = searchParams.get("electionId");
-  const electionId = electionIdVal ? parseInt(electionIdVal, 10) : undefined;
+  const electionId = searchParams.get("electionId") ?? undefined;
   const queryParams = electionId ? { electionId } : undefined;
 
   const { data: constituency, isLoading } = useGetConstituency(id, queryParams, {

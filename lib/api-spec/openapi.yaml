@@ -57,7 +57,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "200":
           description: Election detail
@@ -78,7 +78,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "200":
           description: Election summary
@@ -97,7 +97,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "200":
           description: Seat breakdown per party
@@ -118,7 +118,7 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
       responses:
         "200":
           description: Vote share per party
@@ -143,23 +143,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Party"
-    post:
-      summary: "Add a new political party"
-      operationId: "createParty"
-      tags: [parties]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreatePartyRequest"
-      responses:
-        "201":
-          description: "Party created successfully"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Party"
 
   /constituencies:
     get:
@@ -169,9 +152,9 @@ paths:
       parameters:
         - name: electionId
           in: query
-          required: false
+          required: true
           schema:
-            type: integer
+            type: string
       responses:
         "200":
           description: List of constituencies with results
@@ -192,12 +175,12 @@ paths:
           in: path
           required: true
           schema:
-            type: integer
+            type: string
         - name: electionId
           in: query
           required: false
           schema:
-            type: integer
+            type: string
       responses:
         "200":
           description: Constituency with detailed candidate results
@@ -210,19 +193,6 @@ paths:
 
 components:
   schemas:
-    CreatePartyRequest:
-      type: object
-      required: [name, abbreviation, color]
-      properties:
-        name:
-          type: string
-        abbreviation:
-          type: string
-        color:
-          type: string
-        description:
-          type: string
-
     HealthStatus:
       type: object
       properties:
@@ -233,19 +203,14 @@ components:
 
     Election:
       type: object
-      required: [id, name, date, totalSeats, status, scope]
+      required: [id, name, date, scope]
       properties:
         id:
-          type: integer
+          type: string
         name:
           type: string
         date:
           type: string
-        totalSeats:
-          type: integer
-        status:
-          type: string
-          description: "declared | counting | pending"
         scope:
           type: string
         state:
@@ -256,7 +221,7 @@ components:
       required: [electionId, electionName, totalRegisteredVoters, totalVotesCast, turnoutPercent, seatsTotal, seatsDeclared, leadingParty, partyContestedSeats]
       properties:
         electionId:
-          type: integer
+          type: string
         electionName:
           type: string
         totalRegisteredVoters:
@@ -287,7 +252,7 @@ components:
       required: [partyId, partyName, partyColor, partyAbbreviation, seatsContested]
       properties:
         partyId:
-          type: integer
+          type: string
         partyName:
           type: string
         partyAbbreviation:
@@ -302,7 +267,7 @@ components:
       required: [partyId, partyName, partyColor, partyAbbreviation, seatsWon]
       properties:
         partyId:
-          type: integer
+          type: string
         partyName:
           type: string
         partyAbbreviation:
@@ -317,7 +282,7 @@ components:
       required: [partyId, partyName, partyColor, partyAbbreviation, totalVotes, voteSharePercent]
       properties:
         partyId:
-          type: integer
+          type: string
         partyName:
           type: string
         partyAbbreviation:
@@ -334,7 +299,7 @@ components:
       required: [id, name, abbreviation, color]
       properties:
         id:
-          type: integer
+          type: string
         name:
           type: string
         abbreviation:
@@ -349,9 +314,9 @@ components:
       required: [id, name, region, code, registeredVoters, votesCast, spoiltVotes, turnoutPercent, status, scope, state, electionId]
       properties:
         id:
-          type: integer
+          type: string
         electionId:
-          type: integer
+          type: string
         name:
           type: string
         region:
@@ -374,7 +339,7 @@ components:
         state:
           type: string
         winningPartyId:
-          type: ["integer", "null"]
+          type: ["string", "null"]
         winningPartyName:
           type: ["string", "null"]
         winningPartyColor:
@@ -401,7 +366,7 @@ components:
       required: [id, name, region, code, registeredVoters, votesCast, spoiltVotes, turnoutPercent, status, candidates, scope, state]
       properties:
         id:
-          type: integer
+          type: string
         name:
           type: string
         region:
@@ -444,7 +409,7 @@ components:
         name:
           type: string
         partyId:
-          type: integer
+          type: string
         partyName:
           type: string
         partyAbbreviation:

@@ -1,309 +1,132 @@
 import { Router } from "express";
-import { db } from "@workspace/db";
 import {
-  constituenciesTable,
-  candidatesTable,
-  candidateVotesTable,
-  partiesTable,
-  constituencyResultsTable,
-  electionsTable,
-} from "@workspace/db";
-import { eq, and, sql } from "drizzle-orm";
+  electionDataClient,
+  decodeElectionId,
+  decodeConstituencyId,
+  encodeConstituencyId,
+  parseSeatName,
+  getPartyNameMap,
+  getSeatStateMap,
+} from "../lib/election-data-client";
+import { getPartyColor } from "../lib/party-colors";
+import { getSeatLayout } from "../lib/seat-layout";
 
 const router = Router();
 
 router.get("/constituencies", async (req, res) => {
   try {
-    const electionId = req.query.electionId ? parseInt(req.query.electionId as string, 10) : null;
+    const electionIdParam = req.query.electionId as string | undefined;
+    if (!electionIdParam) return res.status(400).json({ error: "electionId is required" });
+    const decoded = decodeElectionId(electionIdParam);
+    if (!decoded) return res.status(400).json({ error: "Invalid electionId" });
 
-    const results = await db
-      .select({
-        id: constituenciesTable.id,
-        name: constituenciesTable.name,
-        region: constituenciesTable.region,
-        code: constituenciesTable.code,
-        latitude: constituenciesTable.latitude,
-        longitude: constituenciesTable.longitude,
-        gridX: constituenciesTable.gridX,
-        gridY: constituenciesTable.gridY,
-        scope: constituenciesTable.scope,
-        state: constituenciesTable.state,
-        registeredVoters: constituencyResultsTable.registeredVoters,
-        votesCast: constituencyResultsTable.votesCast,
-        spoiltVotes: constituencyResultsTable.spoiltVotes,
-        status: constituencyResultsTable.status,
-        electionId: constituencyResultsTable.electionId,
-      })
-      .from(constituenciesTable)
-      .innerJoin(
-        constituencyResultsTable,
-        and(
-          eq(constituencyResultsTable.constituencyId, constituenciesTable.id),
-          electionId !== null ? eq(constituencyResultsTable.electionId, electionId) : sql`1=1`
-        )
-      )
-      .orderBy(constituenciesTable.name);
+    const scope = decoded.type === "parlimen" ? "federal" : "state";
 
-    // For each constituency, find the winner
-    const winnerRows = await db
-      .select({
-        constituencyId: candidateVotesTable.constituencyId,
-        candidateId: candidateVotesTable.candidateId,
-        votes: candidateVotesTable.votes,
-        candidateName: candidatesTable.name,
-        partyId: partiesTable.id,
-        partyName: partiesTable.name,
-        partyColor: partiesTable.color,
-        partyAbbreviation: partiesTable.abbreviation,
-        electionId: candidateVotesTable.electionId,
-      })
-      .from(candidateVotesTable)
-      .innerJoin(candidatesTable, eq(candidateVotesTable.candidateId, candidatesTable.id))
-      .innerJoin(partiesTable, eq(candidatesTable.partyId, partiesTable.id))
-      .where(
-        and(
-          eq(candidateVotesTable.isWinner, 1),
-          electionId !== null ? eq(candidateVotesTable.electionId, electionId) : sql`1=1`
-        )
-      );
+    const [bySeat, partyNames, seatStates] = await Promise.all([
+      electionDataClient.getElectionsBySeat(decoded.state, decoded.election),
+      getPartyNameMap(),
+      getSeatStateMap(),
+    ]);
 
-    const winnerMap = new Map(winnerRows.map((w) => [w.constituencyId, w]));
-
-    // Fetch all candidate votes to compute margins of victory
-    const allVotes = await db
-      .select({
-        constituencyId: candidateVotesTable.constituencyId,
-        votes: candidateVotesTable.votes,
-      })
-      .from(candidateVotesTable)
-      .where(
-        electionId !== null ? eq(candidateVotesTable.electionId, electionId) : sql`1=1`
-      )
-      .orderBy(candidateVotesTable.constituencyId, sql`${candidateVotesTable.votes} desc`);
-
-    const votesMap = new Map<number, number[]>();
-    for (const v of allVotes) {
-      if (!votesMap.has(v.constituencyId)) {
-        votesMap.set(v.constituencyId, []);
-      }
-      votesMap.get(v.constituencyId)!.push(v.votes);
-    }
-
-    res.json(
-      results.map((r) => {
-        const winner = winnerMap.get(r.id);
-        const turnoutPercent =
-          r.registeredVoters > 0
-            ? Math.round((r.votesCast / r.registeredVoters) * 10000) / 100
-            : 0;
-
-        const constituencyVotes = votesMap.get(r.id) || [];
-        const margin = constituencyVotes.length > 1
-          ? constituencyVotes[0] - constituencyVotes[1]
-          : (constituencyVotes[0] ?? null);
-
+    return res.json(
+      bySeat.map((s) => {
+        const { code, name, region: fallbackRegion } = parseSeatName(s.seat, decoded.state);
+        // `s.state` (and parseSeatName's fallback) is just the query param
+        // echoed back (e.g. "Malaysia" for a national query) — /results needs
+        // the seat's *actual* state, so prefer the master roster's mapping.
+        const region = seatStates.get(code) ?? fallbackRegion;
+        const layout = getSeatLayout(region, code);
         return {
-          id: r.id,
-          electionId: r.electionId,
-          name: r.name,
-          region: r.region,
-          code: r.code ?? "",
-          scope: r.scope,
-          state: r.state,
-          registeredVoters: r.registeredVoters,
-          votesCast: r.votesCast,
-          spoiltVotes: r.spoiltVotes,
-          turnoutPercent,
-          status: r.status,
-          winningPartyId: winner?.partyId ?? null,
-          winningPartyName: winner?.partyName ?? null,
-          winningPartyColor: winner?.partyColor ?? null,
-          winningPartyAbbreviation: winner?.partyAbbreviation ?? null,
-          winningCandidateName: winner?.candidateName ?? null,
-          winningVotes: winner?.votes ?? null,
-          margin,
-          latitude: r.latitude ?? null,
-          longitude: r.longitude ?? null,
-          gridX: r.gridX ?? null,
-          gridY: r.gridY ?? null,
+          id: encodeConstituencyId(s.seat, region, s.date),
+          electionId: electionIdParam,
+          name,
+          region,
+          code,
+          scope,
+          state: region,
+          registeredVoters: s.voters_total,
+          votesCast: s.voter_turnout,
+          spoiltVotes: s.votes_rejected,
+          turnoutPercent: Math.round((s.voter_turnout_perc ?? 0) * 100) / 100,
+          status: "declared",
+          winningPartyId: s.party_uid,
+          winningPartyName: partyNames.get(s.party) ?? s.party,
+          winningPartyColor: getPartyColor(s.party),
+          winningPartyAbbreviation: s.party,
+          winningCandidateName: s.name,
+          // electiondata.my's by_seat endpoint gives the winning margin but not
+          // the winner's raw vote count — only /results (single-seat) has that.
+          winningVotes: null,
+          margin: s.majority,
+          latitude: null,
+          longitude: null,
+          gridX: layout?.gridX ?? null,
+          gridY: layout?.gridY ?? null,
         };
       })
     );
   } catch (err) {
     req.log.error({ err }, "Failed to list constituencies");
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
 router.get("/constituencies/:id", async (req, res) => {
   try {
-    const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+    const decoded = decodeConstituencyId(req.params.id);
+    if (!decoded) return res.status(400).json({ error: "Invalid id" });
+    const { seat, state, date } = decoded;
 
-    const [constituency] = await db
-      .select()
-      .from(constituenciesTable)
-      .where(eq(constituenciesTable.id, id));
-    if (!constituency) return res.status(404).json({ error: "Not found" });
+    const [{ ballot, stats }, partyNames] = await Promise.all([
+      electionDataClient.getResults(seat, state, date),
+      getPartyNameMap(),
+    ]);
 
-    const electionIdParam = req.query.electionId ? parseInt(req.query.electionId as string, 10) : null;
+    const contestStats = stats[0];
+    if (!contestStats) return res.status(404).json({ error: "Not found" });
 
-    // Get result for this constituency
-    const resultQuery = db
-      .select({
-        electionId: constituencyResultsTable.electionId,
-        constituencyId: constituencyResultsTable.constituencyId,
-        registeredVoters: constituencyResultsTable.registeredVoters,
-        votesCast: constituencyResultsTable.votesCast,
-        spoiltVotes: constituencyResultsTable.spoiltVotes,
-        status: constituencyResultsTable.status,
-        electionDate: electionsTable.date,
-        electionScope: electionsTable.scope,
-      })
-      .from(constituencyResultsTable)
-      .innerJoin(electionsTable, eq(electionsTable.id, constituencyResultsTable.electionId));
+    const { code, name, region } = parseSeatName(seat, state);
+    const layout = getSeatLayout(region, code);
 
-    let result;
-    if (electionIdParam && !isNaN(electionIdParam)) {
-      [result] = await resultQuery
-        .where(
-          and(
-            eq(constituencyResultsTable.constituencyId, id),
-            eq(constituencyResultsTable.electionId, electionIdParam)
-          )
-        )
-        .limit(1);
-    } else {
-      [result] = await resultQuery
-        .where(eq(constituencyResultsTable.constituencyId, id))
-        .orderBy(sql`${electionsTable.date} desc`)
-        .limit(1);
-    }
-
-    if (!result) return res.status(404).json({ error: "No results found" });
-
-    // Find previous election results for this constituency (same scope, older date)
-    const [prevResult] = await db
-      .select({
-        electionId: constituencyResultsTable.electionId,
-      })
-      .from(constituencyResultsTable)
-      .innerJoin(electionsTable, eq(electionsTable.id, constituencyResultsTable.electionId))
-      .where(
-        and(
-          eq(constituencyResultsTable.constituencyId, id),
-          eq(electionsTable.scope, result.electionScope),
-          sql`${electionsTable.date} < ${result.electionDate}`
-        )
-      )
-      .orderBy(sql`${electionsTable.date} desc`)
-      .limit(1);
-
-    const prevPartyVotes: Record<string, number> = {};
-    let prevTotalVotes = 0;
-
-    if (prevResult) {
-      const prevCandidates = await db
-        .select({
-          partyAbbreviation: partiesTable.abbreviation,
-          votes: candidateVotesTable.votes,
-        })
-        .from(candidatesTable)
-        .innerJoin(partiesTable, eq(candidatesTable.partyId, partiesTable.id))
-        .innerJoin(
-          candidateVotesTable,
-          and(
-            eq(candidateVotesTable.candidateId, candidatesTable.id),
-            eq(candidateVotesTable.electionId, prevResult.electionId)
-          )
-        )
-        .where(
-          and(
-            eq(candidatesTable.constituencyId, id),
-            eq(candidatesTable.electionId, prevResult.electionId)
-          )
-        );
-
-      prevTotalVotes = prevCandidates.reduce((sum, c) => sum + c.votes, 0);
-      prevCandidates.forEach((c) => {
-        prevPartyVotes[c.partyAbbreviation] = c.votes;
-      });
-    }
-
-    const turnoutPercent =
-      result.registeredVoters > 0
-        ? Math.round((result.votesCast / result.registeredVoters) * 10000) / 100
-        : 0;
-
-    // Get all candidates and their votes
-    const candidateRows = await db
-      .select({
-        candidateId: candidatesTable.id,
-        candidateName: candidatesTable.name,
-        partyId: partiesTable.id,
-        partyName: partiesTable.name,
-        partyAbbreviation: partiesTable.abbreviation,
-        partyColor: partiesTable.color,
-        votes: candidateVotesTable.votes,
-        isWinner: candidateVotesTable.isWinner,
-      })
-      .from(candidatesTable)
-      .innerJoin(partiesTable, eq(candidatesTable.partyId, partiesTable.id))
-      .innerJoin(
-        candidateVotesTable,
-        and(
-          eq(candidateVotesTable.candidateId, candidatesTable.id),
-          eq(candidateVotesTable.electionId, result.electionId)
-        )
-      )
-      .where(
-        and(
-          eq(candidatesTable.constituencyId, id),
-          eq(candidatesTable.electionId, result.electionId)
-        )
-      )
-      .orderBy(sql`${candidateVotesTable.votes} desc`);
-
-    const totalVotes = candidateRows.reduce((sum, c) => sum + c.votes, 0);
+    // electionId query param isn't required to look up a single contest (the
+    // opaque constituency id already carries seat/state/date), but we still
+    // need the election's `type` to report scope, so infer it from the
+    // catalogue instead of a fourth external call whenever possible.
+    const electionIdParam = req.query.electionId as string | undefined;
+    const decodedElection = electionIdParam ? decodeElectionId(electionIdParam) : null;
+    const scope = decodedElection ? (decodedElection.type === "parlimen" ? "federal" : "state") : (code.startsWith("P") ? "federal" : "state");
 
     return res.json({
-      id: constituency.id,
-      name: constituency.name,
-      region: constituency.region,
-      code: constituency.code ?? "",
-      scope: constituency.scope,
-      state: constituency.state,
-      registeredVoters: result.registeredVoters,
-      votesCast: result.votesCast,
-      spoiltVotes: result.spoiltVotes,
-      turnoutPercent,
-      status: result.status,
-      latitude: constituency.latitude ?? null,
-      longitude: constituency.longitude ?? null,
-      gridX: constituency.gridX ?? null,
-      gridY: constituency.gridY ?? null,
-      candidates: candidateRows.map((c) => {
-        const share = totalVotes > 0 ? Math.round((c.votes / totalVotes) * 10000) / 100 : 0;
-        
-        let change: number | null = null;
-        if (prevTotalVotes > 0 && prevPartyVotes[c.partyAbbreviation] !== undefined) {
-          const prevShare = (prevPartyVotes[c.partyAbbreviation] / prevTotalVotes) * 100;
-          change = Math.round((share - prevShare) * 100) / 100;
-        }
-
-        return {
-          id: c.candidateId,
-          name: c.candidateName,
-          partyId: c.partyId,
-          partyName: c.partyName,
-          partyAbbreviation: c.partyAbbreviation,
-          partyColor: c.partyColor,
-          votes: c.votes,
-          voteSharePercent: share,
-          voteShareChangePercent: change,
-          isWinner: c.isWinner === 1,
-        };
-      }),
+      id: req.params.id,
+      name,
+      region,
+      code,
+      scope,
+      state: region,
+      registeredVoters: contestStats.voters_total,
+      votesCast: contestStats.voter_turnout,
+      spoiltVotes: contestStats.votes_rejected,
+      turnoutPercent: Math.round((contestStats.voter_turnout_perc ?? 0) * 100) / 100,
+      status: "declared",
+      latitude: null,
+      longitude: null,
+      gridX: layout?.gridX ?? null,
+      gridY: layout?.gridY ?? null,
+      candidates: ballot.map((c, i) => ({
+        id: i,
+        name: c.name,
+        partyId: c.party_uid,
+        partyName: partyNames.get(c.party) ?? c.party,
+        partyAbbreviation: c.party,
+        partyColor: getPartyColor(c.party),
+        votes: c.votes,
+        voteSharePercent: c.votes_perc ?? 0,
+        // electiondata.my doesn't expose a previous-election comparison in this
+        // response — swing tracking would need a second /results lookup against
+        // the prior contest for the same seat, out of scope for now.
+        voteShareChangePercent: null,
+        isWinner: c.result === "won" || c.result === "won_uncontested",
+      })),
     });
   } catch (err) {
     req.log.error({ err }, "Failed to get constituency");

@@ -7,7 +7,7 @@
  */
 
 export interface PartySeatCount {
-  partyId: number;
+  partyId: string;
   partyName: string;
   partyAbbreviation: string;
   partyColor: string;
